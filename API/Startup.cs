@@ -3,26 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using API.Extensions;
-using Application.core;
 using Application.WorkOrders;
-using AutoMapper;
 using FluentValidation.AspNetCore;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using Persistence;
+using Microsoft.AspNetCore.Identity;
+
 namespace API
 {
     public class Startup
@@ -33,13 +27,15 @@ namespace API
             _Config = config;
         }
 
-        // public IConfiguration Configuration { get; }
-
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<DataContext>(options =>
+            {
+                options.UseSqlServer(_Config.GetConnectionString("DefaultConnection"));
+            });
 
-            services.AddControllers(opt => 
+            services.AddControllers(opt =>
             {
                 var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
                 opt.Filters.Add(new AuthorizeFilter(policy));
@@ -49,43 +45,34 @@ namespace API
                 config.RegisterValidatorsFromAssemblyContaining<Edit>();
                 // config.RegisterValidatorsFromAssemblyContaining<Delete>();
             });
+
             services.AddApolicationServices(_Config);
+
+            // Tambahkan ini untuk Identity Services
             services.AddIdentityServices(_Config);
+
             services.AddControllers()
-                .AddJsonOptions(
-                x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve
+                .AddJsonOptions(x =>
+                {
+                    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+                    x.JsonSerializerOptions.PropertyNamingPolicy = null;
+                });
 
-                )
-            .AddJsonOptions(
-                x =>x.JsonSerializerOptions.PropertyNamingPolicy = null
-
-                );
-
-
-
-
-            // services.AddCors(opt => {
-            //     opt.addPolicy("CorsPolicy",policy =>{
-            //         policy.allowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:3000");
-            //     });
-            // });
             services.AddCors(options =>
-        {
-            options.AddPolicy("CorsPolicy", builder =>
             {
-                builder.AllowAnyOrigin()
-                       .AllowAnyMethod()
-                       .AllowAnyHeader()
-                       .WithOrigins("http://localhost:3000", "http://localhost:5173");
+                options.AddPolicy("CorsPolicy", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader()
+                           .WithOrigins("http://localhost:3000", "http://localhost:5173");
+                });
             });
-        });
-
+            // Services.AddIdentityServices(_Config)
         }
 
-
-
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, RoleManager<IdentityRole> roleManager)
         {
             if (env.IsDevelopment())
             {
@@ -102,7 +89,15 @@ namespace API
             app.UseCors("CorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
-
+            // Create roles if they don't exist
+            string[] roles = new string[] { "Admin", "Staf", "LI", "Teknisi", "Operator" };
+            foreach (var role in roles)
+            {
+                if (!roleManager.RoleExistsAsync(role).Result)
+                {
+                    roleManager.CreateAsync(new IdentityRole(role)).Wait();
+                }
+            }
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

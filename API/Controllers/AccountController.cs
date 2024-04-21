@@ -16,7 +16,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace API.Controllers
 {
-    [AllowAnonymous]
+    //[AllowAnonymous]
     [ApiController]
     [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
     public class AccountController : ControllerBase
@@ -32,6 +32,7 @@ namespace API.Controllers
             _userManager = userManager;
 
         }
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
@@ -45,25 +46,37 @@ namespace API.Controllers
             return Unauthorized();
         }
         [HttpPost("register")]
-        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
-        {
-            if (await _userManager.Users.AnyAsync(x => x.UserName == registerDto.Username))
-            {
-                return BadRequest("User name taken");
-            }
-            var user = new AppUser
-            {
-                DisplayName = registerDto.DisplayName,
-                UserName = registerDto.Username
-            };
-            var result = await _userManager.CreateAsync(user, registerDto.Password);
-            if (result.Succeeded)
-            {
-                return CreateUserObject(user);
-            }
-            return BadRequest("Problem registering user");
+public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
+{
+    if (await _userManager.Users.AnyAsync(x => x.UserName == registerDto.Username))
+    {
+        return BadRequest("Username is already taken.");
+    }
 
+    var user = new AppUser
+    {
+        DisplayName = registerDto.DisplayName,
+        UserName = registerDto.Username,
+        Role = registerDto.Role,
+    };
+
+    var result = await _userManager.CreateAsync(user, registerDto.Password);
+
+    if (result.Succeeded)
+    {
+        var roleResult = await _userManager.AddToRoleAsync(user, user.Role);
+
+        if (!roleResult.Succeeded)
+        {
+            return BadRequest("Failed to assign role to user.");
         }
+
+        return CreateUserObject(user);
+    }
+
+    return BadRequest(result.Errors.Select(e => e.Description).ToList());
+}
+
         [Authorize]
         [HttpGet]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
@@ -104,16 +117,38 @@ namespace API.Controllers
 
             Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
         }
+        [AuthorizeRoles("Admin,Staf")]
+        //[AuthorizeRoles("Admin,Staff")]
+        [HttpGet("allUsers")]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
+        {
+            var currentUserRole = User.FindFirstValue(ClaimTypes.Role);
+            Console.WriteLine("Current User Role: " + currentUserRole);
+
+            var users = await _userManager.Users.ToListAsync();
+
+            var userDtos = users.Select(user => new UserDto
+            {
+                Id = Guid.Parse(user.Id),
+                DisplayName = user.DisplayName,
+                UserName = user.UserName,
+                Image = null,
+                Role = user.Role
+            }).ToList();
+
+            return Ok(userDtos);
+        }
 
         private UserDto CreateUserObject(AppUser user)
         {
             return new UserDto
             {
-                Id= Guid.Parse(user.Id),
+                Id = Guid.Parse(user.Id),
                 DisplayName = user.DisplayName,
                 Image = null,
                 Token = _tokenService.CreateToken(user),
-                UserName = user.UserName
+                UserName = user.UserName,
+                Role = user.Role
             };
         }
     }

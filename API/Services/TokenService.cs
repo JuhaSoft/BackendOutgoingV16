@@ -19,29 +19,40 @@ namespace API.Services
             _config = config;
         }
 
+        
         public string CreateToken(AppUser user)
         {
-            var claims = new List<Claim>
+            try
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-            };
+                var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(ClaimTypes.Role, user.Role) // Include the user's role in the token
+        };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["TokenKey"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["TokenKey"]));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = DateTime.UtcNow.AddMinutes(200),
+                    SigningCredentials = creds
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+
+                return tokenHandler.WriteToken(token);
+            }
+            catch (Exception ex)
             {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(10),
-                SigningCredentials = creds
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            return tokenHandler.WriteToken(token);
+                // Di sini Anda bisa menangani error, misalnya mencatat ke log atau mengembalikan pesan error
+                // Di contoh ini, kita akan mengembalikan pesan error sebagai token jika terjadi error
+                return ex.Message;
+            }
         }
 
         public RefreshToken GenerateRefreshToken()
