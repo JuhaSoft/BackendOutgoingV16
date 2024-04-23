@@ -20,11 +20,12 @@ namespace API.Controllers
     public class DataTracksController : BaseApiController
     {
         private readonly IMediator _mediator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public DataTracksController(IMediator mediator)
+        public DataTracksController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
-            
+            this._httpContextAccessor = httpContextAccessor;
         }
         [AllowAnonymous]
        [HttpGet]

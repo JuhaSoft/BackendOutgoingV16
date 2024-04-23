@@ -13,6 +13,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Domain;
 using Microsoft.AspNetCore.Http;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Png; // Import PngEncoder
 
 namespace API.Controllers
 {
@@ -24,13 +29,14 @@ namespace API.Controllers
         private readonly TokenService _tokenService;
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
+        private readonly IWebHostEnvironment _hostingEnvironment;
 
-        public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, TokenService tokenService)
+        public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, TokenService tokenService, IWebHostEnvironment hostingEnvironment)
         {
             _tokenService = tokenService;
             _signInManager = signInManager;
             _userManager = userManager;
-
+            _hostingEnvironment = hostingEnvironment;
         }
         [AllowAnonymous]
         [HttpPost("login")]
@@ -45,6 +51,25 @@ namespace API.Controllers
             }
             return Unauthorized();
         }
+        [Authorize]
+        [HttpPost("changePassword")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto changePasswordDto)
+        {
+            var user = await _userManager.FindByNameAsync(User.FindFirstValue(ClaimTypes.Name));
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, changePasswordDto.OldPassword, changePasswordDto.NewPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest("Failed to change password.");
+            }
+
+            return Ok("Password changed successfully.");
+        }
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
@@ -131,7 +156,7 @@ namespace API.Controllers
                 Id = Guid.Parse(user.Id),
                 DisplayName = user.DisplayName,
                 UserName = user.UserName,
-                Image = null,
+                Image = user.Image,
                 Role = user.Role,
                 IsActive = user.IsActive // Properti IsActive
             }).ToList();
@@ -178,10 +203,8 @@ namespace API.Controllers
         }
         [Authorize]
         [HttpPut("updateProfile")]
-        public async Task<ActionResult<UserDto>> UpdateProfile(UserUpdateDto updateDto)
+        public async Task<ActionResult<UserDto>> UpdateProfile([FromForm] UserUpdateDto updateDto, IFormFile image)
         {
-           
-            // Menemukan user berdasarkan UserName
             var user = await _userManager.FindByNameAsync(updateDto.UserName);
 
             if (user == null)
@@ -189,10 +212,69 @@ namespace API.Controllers
                 return NotFound("User not found.");
             }
 
+            // Jika user mengirimkan gambar baru
+            if (image != null)
+            {
+                try
+                {
+                    var userName = user.UserName ?? "";
+                    var uploadsPath = Path.Combine("Upload", "Image", "User", "profil", userName);
+
+                    // Full path to wwwroot
+                    var webRootPath = _hostingEnvironment.WebRootPath;
+                    if (string.IsNullOrEmpty(webRootPath))
+                    {
+                        // Jika webRootPath kosong, gunakan folder default
+                        webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                        Console.WriteLine("WebRootPath is null or empty. Using default folder.");
+                    }
+
+                    var uploadsFolder = Path.Combine(webRootPath, uploadsPath);
+
+                    // Jika folder Upload/Image/User/profil belum ada, buat folder
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    using (var imageStream = image.OpenReadStream())
+                    {
+                        // Load gambar menggunakan ImageSharp
+                        using (var imageSharp = Image.Load(imageStream))
+                        {
+                            // Resize gambar menjadi 200x200 (contoh)
+                            imageSharp.Mutate(x => x.Resize(200, 200));
+
+                            // Simpan gambar yang sudah diresize
+                            var extension = Path.GetExtension(image.FileName).ToLower();
+                            var uniqueFileName = Guid.NewGuid().ToString() + extension;
+                            var imagePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                            // Menentukan encoder (PNG dalam contoh ini)
+                            var pngEncoder = new PngEncoder();
+
+                            using (var outputStream = new FileStream(imagePath, FileMode.Create))
+                            {
+                                // Simpan gambar yang sudah diresize ke server
+                                imageSharp.Save(outputStream, pngEncoder);
+                            }
+
+                            // Mengupdate path gambar dalam data user
+                            user.Image = $"/{uploadsPath}/{uniqueFileName}";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Tangkap dan cetak pesan error jika terjadi masalah
+                    Console.WriteLine($"Error: {ex.Message}");
+                    return StatusCode(500, "Internal server error");
+                }
+            }
+
             // Update properti user
             user.UserName = updateDto.UserName;
             user.DisplayName = updateDto.DisplayName;
-            user.Image = updateDto.Image;
 
             // Melakukan update user
             var result = await _userManager.UpdateAsync(user);
@@ -313,7 +395,7 @@ namespace API.Controllers
             {
                 Id = Guid.Parse(user.Id),
                 DisplayName = user.DisplayName,
-                Image = null,
+                Image = user.Image,
                 Token = _tokenService.CreateToken(user),
                 UserName = user.UserName,
                 IsActive=user.IsActive,
@@ -326,7 +408,7 @@ namespace API.Controllers
             {
                 Id = Guid.Parse(user.Id),
                 DisplayName = user.DisplayName,
-                Image = null,
+                Image = user.Image,
                 UserName = user.UserName,
                 IsActive=user.IsActive,
                 Role = user.Role

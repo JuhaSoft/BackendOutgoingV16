@@ -18,9 +18,12 @@ namespace API.Controllers
     public class ParamChecksController : BaseApiController
     {
         private readonly IMediator _mediator;
-        public ParamChecksController(IMediator mediator)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ParamChecksController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
+            this._httpContextAccessor = httpContextAccessor;
         }
         [AllowAnonymous]
         [HttpGet]

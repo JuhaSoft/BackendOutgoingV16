@@ -10,16 +10,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Common.DTOs;
 using static Application.LastStationIDs.List;
+using System.Security.Claims;
 
 namespace API.Controllers
 {
     public class WOController :BaseApiController
     {
         private readonly IMediator _mediator;
-      
-        public WOController(IMediator mediator)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public WOController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
+            this._httpContextAccessor = httpContextAccessor;
         }
         [AllowAnonymous]
 
@@ -75,14 +78,18 @@ namespace API.Controllers
 
             
         }
-        [AllowAnonymous]
+        [Authorize]
+
 
         [HttpPost]
         public async Task<IActionResult> CreateWO(WorkOrder workorder)
         {
             try
             {
+                var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
                 workorder.WoCreate = DateTime.Now;
+                workorder.UserIdCreate = userId;
                 return Ok(await _mediator.Send(new Create.Command { WorkOrders = workorder }));
             }
             catch (Exception ex)

@@ -16,9 +16,12 @@ namespace API.Controllers
 
     {
         private readonly IMediator _mediator;
-        public DataLineController(IMediator mediator)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public DataLineController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
+            this._httpContextAccessor = httpContextAccessor;
         }
          [AllowAnonymous]
                  [HttpGet]

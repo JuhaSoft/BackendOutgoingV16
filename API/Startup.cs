@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.Json.Serialization;
@@ -9,25 +8,26 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Persistence;
-using Microsoft.AspNetCore.Identity;
 
 namespace API
 {
     public class Startup
     {
         public IConfiguration _Config { get; }
-        public Startup(IConfiguration config)
+        private readonly IHostEnvironment _env;
+        public Startup(IConfiguration config, IHostEnvironment env)
         {
             _Config = config;
+            _env = env;
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<DataContext>(options =>
@@ -35,6 +35,7 @@ namespace API
                 options.UseSqlServer(_Config.GetConnectionString("DefaultConnection"));
             });
 
+            services.AddIdentityServices(_Config);
             services.AddControllers(opt =>
             {
                 var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
@@ -44,20 +45,17 @@ namespace API
                 config.RegisterValidatorsFromAssemblyContaining<Create>();
                 config.RegisterValidatorsFromAssemblyContaining<Edit>();
                 // config.RegisterValidatorsFromAssemblyContaining<Delete>();
+            }).AddJsonOptions(x =>
+            {
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+                x.JsonSerializerOptions.PropertyNamingPolicy = null;
             });
 
             services.AddApolicationServices(_Config);
-            services.AddControllersWithViews();
-            services.AddHttpContextAccessor(); // Tambahkan ini jika belum ad
-            // Tambahkan ini untuk Identity Services
-            services.AddIdentityServices(_Config);
 
-            services.AddControllers()
-                .AddJsonOptions(x =>
-                {
-                    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-                    x.JsonSerializerOptions.PropertyNamingPolicy = null;
-                });
+            services.AddHttpContextAccessor(); // Tambahkan ini jika belum ada
+
+            services.AddControllersWithViews();
 
             services.AddCors(options =>
             {
@@ -69,10 +67,10 @@ namespace API
                            .WithOrigins("http://localhost:3000", "http://localhost:5173");
                 });
             });
+
             // Services.AddIdentityServices(_Config)
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, RoleManager<IdentityRole> roleManager)
         {
             if (env.IsDevelopment())
@@ -86,10 +84,16 @@ namespace API
 
             app.UseHttpsRedirection();
 
+            app.UseStaticFiles(); // Untuk mengakses static files (seperti gambar)
+
             app.UseRouting();
+
             app.UseCors("CorsPolicy");
+
             app.UseAuthentication();
+
             app.UseAuthorization();
+
             // Create roles if they don't exist
             string[] roles = new string[] { "Admin", "Staf", "LI", "Teknisi", "Operator" };
             foreach (var role in roles)
@@ -99,7 +103,7 @@ namespace API
                     roleManager.CreateAsync(new IdentityRole(role)).Wait();
                 }
             }
-            app.UseStaticFiles(); // Untuk mengakses static files (seperti gambar)
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

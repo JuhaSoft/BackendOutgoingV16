@@ -48,8 +48,8 @@ namespace Application.WorkOrders
                 try
                 {
                     request.WorkOrders.Id = Guid.NewGuid();
-                    var UserID = request.WorkOrders.UserIdCreate.ToString();
-                    request.WorkOrders.UserIdCreate = "47f8f68b-2099-432e-bc87-86e03cb26c9f";
+                    //var UserID = request.WorkOrders.UserIdCreate.ToString();
+                    //request.WorkOrders.UserIdCreate = "47f8f68b-2099-432e-bc87-86e03cb26c9f";
                     _context.WorkOrders.Add(request.WorkOrders);
                     await _context.SaveChangesAsync();
 

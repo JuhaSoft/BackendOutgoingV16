@@ -12,11 +12,12 @@ namespace API.Controllers
     public class DataTrackChecksController :BaseApiController
     {
        private readonly IMediator _mediator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public DataTrackChecksController(IMediator mediator)
+        public DataTrackChecksController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
-
+            this._httpContextAccessor = httpContextAccessor;
         }
         [HttpGet]
         public async Task<ActionResult<List<DataTrackChecking>>> GetDataTracksChecking()

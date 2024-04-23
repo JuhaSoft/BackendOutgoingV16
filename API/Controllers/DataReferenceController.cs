@@ -15,9 +15,12 @@ namespace API.Controllers
     public class DataReferenceController : BaseApiController
     {
         private readonly IMediator _mediator;
-        public DataReferenceController(IMediator mediator)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public DataReferenceController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
+            this._httpContextAccessor = httpContextAccessor;
         }
         [AllowAnonymous]
         [HttpGet]

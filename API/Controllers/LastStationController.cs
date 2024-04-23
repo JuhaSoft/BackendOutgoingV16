@@ -15,9 +15,12 @@ namespace API.Controllers
     public class LastStationController : BaseApiController
     {
         private readonly IMediator _mediator;
-        public LastStationController(IMediator mediator)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public LastStationController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             this._mediator = mediator;
+            this._httpContextAccessor = httpContextAccessor;
         }
         [AllowAnonymous]
         [HttpGet]
