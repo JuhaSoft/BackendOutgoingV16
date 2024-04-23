@@ -47,7 +47,8 @@ namespace API
             });
 
             services.AddApolicationServices(_Config);
-
+            services.AddControllersWithViews();
+            services.AddHttpContextAccessor(); // Tambahkan ini jika belum ad
             // Tambahkan ini untuk Identity Services
             services.AddIdentityServices(_Config);
 
@@ -98,6 +99,7 @@ namespace API
                     roleManager.CreateAsync(new IdentityRole(role)).Wait();
                 }
             }
+            app.UseStaticFiles(); // Untuk mengakses static files (seperti gambar)
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

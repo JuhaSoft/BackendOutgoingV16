@@ -13,7 +13,6 @@ namespace Common.DTOs.User
         public string Token { get; set; }
         public string Image { get; set; }
         public string Role { get; set; }
-        
-        
+        public bool IsActive { get; set; } 
     }
 }

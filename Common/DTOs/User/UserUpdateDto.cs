@@ -5,16 +5,15 @@ using System.Threading.Tasks;
 
 namespace Common.DTOs.User
 {
-    public class UserDataDto
+    public class UserUpdateDto
     {
-        public Guid Id { get; set; }
-        
-        
+        //public Guid Id { get; set; }
         public string DisplayName { get; set; }
         public string UserName { get; set; }
+        public string Token { get; set; }
         public string Image { get; set; }
         public string Role { get; set; }
+        public bool IsActive { get; set; }
 
-        public bool IsActive { get; set; } 
     }
 }
