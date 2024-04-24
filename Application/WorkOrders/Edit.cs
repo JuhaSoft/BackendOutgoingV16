@@ -53,8 +53,18 @@ namespace Application.WorkOrders
                 }
         
                 var workorder = await _context.WorkOrders.FirstOrDefaultAsync(u => u.Id == request.WorkOrder.Id);
-                _mapper.Map(request.WorkOrder,workorder);
-            await _context.SaveChangesAsync();
+                //_mapper.Map(request.WorkOrder,workorder);
+                
+                workorder.WoNumber = request.WorkOrder.WoNumber;
+                workorder.SONumber = request.WorkOrder.SONumber;
+                workorder.WoReferenceID = request.WorkOrder.WoReferenceID;
+
+                workorder.WoQTY = request.WorkOrder.WoQTY;
+                workorder.PassQTY = request.WorkOrder.PassQTY;
+                workorder.FailQTY = request.WorkOrder.FailQTY;
+                workorder.WoStatus = request.WorkOrder.WoStatus;
+
+                await _context.SaveChangesAsync();
             return Unit.Value;
             }
 

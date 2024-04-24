@@ -22,6 +22,8 @@ namespace Domain.Model
         public string WoReferenceID { get; set; }
         // [Required]
         public string WoQTY { get; set; }
+        public string PassQTY { get; set; }
+        public string FailQTY { get; set; }
         public string WoStatus { get; set; }
         // DataInsert akan otomatis diatur ketika data disisipkan
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -29,8 +31,8 @@ namespace Domain.Model
     // [Column(TypeName = "datetime2")]
         public DateTime WoCreate { get; set; }
         // [Required]
-public string UserIdCreate { get; set; }
+        public string UserIdCreate { get; set; }
         public AppUser User { get; set; }
-                public bool WOisDeleted { get; set; }
+        public bool WOisDeleted { get; set; }
     }
 }

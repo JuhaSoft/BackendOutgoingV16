@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Domain.Model;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.WorkOrders
@@ -47,9 +48,18 @@ namespace Application.WorkOrders
 
                 try
                 {
+                    var dataReference = await _context.DataReferences
+                .FirstOrDefaultAsync(dr => dr.RefereceName == request.WorkOrders.WoReferenceID && !dr.isDeleted);
+
+
+                    if (dataReference == null)
+                    {
+                        throw new Exception("DataReferenceId tidak ditemukan.");
+                    }
+
+
                     request.WorkOrders.Id = Guid.NewGuid();
-                    //var UserID = request.WorkOrders.UserIdCreate.ToString();
-                    //request.WorkOrders.UserIdCreate = "47f8f68b-2099-432e-bc87-86e03cb26c9f";
+                   
                     _context.WorkOrders.Add(request.WorkOrders);
                     await _context.SaveChangesAsync();
 

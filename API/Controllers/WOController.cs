@@ -56,6 +56,7 @@ namespace API.Controllers
             return Ok(result);
         }
 // [Authorize]
+[AllowAnonymous]
         [HttpGet("{id}")]
         public async Task <ActionResult<WorkOrderDto>>GetWO(Guid Id)
         {
@@ -82,12 +83,12 @@ namespace API.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateWO(WorkOrder workorder)
+        public async Task<IActionResult> UpdateWO(WorkOrder workorder)
         {
             try
             {
                 var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
+                
                 workorder.WoCreate = DateTime.Now;
                 workorder.UserIdCreate = userId;
                 return Ok(await _mediator.Send(new Create.Command { WorkOrders = workorder }));
@@ -104,6 +105,8 @@ namespace API.Controllers
             try
             {
                 workOrder.Id=id;
+                var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                workOrder.UserIdCreate = userId;
                 // Mengirim permintaan ke mediator untuk membuat user
                 return Ok(await _mediator.Send(new Edit.Command { WorkOrder = workOrder }));
             }

@@ -29,7 +29,7 @@ namespace Application.DataReferences
             {
                 if (_context.DataReferences.Any(dl => dl.RefereceName == request.DataReference.RefereceName))
                 {
-                    throw new Exception("Line Id sudah terdaftar.");
+                    throw new Exception("Reference  sudah terdaftar.");
                 }
                 _context.DataReferences.Add(request.DataReference);
                 await _context.SaveChangesAsync();

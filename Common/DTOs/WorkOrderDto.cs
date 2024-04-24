@@ -13,6 +13,8 @@ namespace Common.DTOs
         public string SONumber { get; set; }
         public string WoReferenceID { get; set; }
         public string WoQTY { get; set; }
+        public string PassQTY { get; set; }
+        public string FailQTY { get; set; }
         public string WoStatus { get; set; }
         public DateTime WoCreate { get; set; }
         public string UserIdCreate { get; set; }
