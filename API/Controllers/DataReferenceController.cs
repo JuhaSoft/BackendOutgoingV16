@@ -66,6 +66,27 @@ namespace API.Controllers
             
         }
         [AllowAnonymous]
+        [HttpGet("byname/{referenceName}")]
+        public async Task<ActionResult<DataReference>> GetReferenceByName(string referenceName)
+        {
+            try
+            {
+                var dataRef = await Mediator.Send(new Application.DataReferences.DetailByName.Query { RefereceName = referenceName });
+                if (dataRef == null)
+                {
+                    return NotFound();
+                }
+
+                return dataRef;
+            }
+            catch (Exception ex)
+            {
+                // Tangkap kesalahan dan kirim respons error ke client
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error Mengambil Detail Data Ref: " + ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
 
         [HttpPost]
         public async Task<IActionResult> CreateRef(DataReference dataReference)

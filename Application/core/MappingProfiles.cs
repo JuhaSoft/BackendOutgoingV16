@@ -54,13 +54,18 @@ namespace Application.core
                      isDeleted = src.DataLine.isDeleted
                  }));
                 
+CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
+    .ForMember(dest => dest.ParameterCheck, opt => opt.MapFrom(src => src.ParameterCheck))
+    .ForMember(dest => dest.ImageDataChecks, opt => opt.MapFrom(src => src.ImageDataChecks));
 
+
+            CreateMap<ImageDataCheck, ImageDataCheckDTO>();
             CreateMap<ParameterCheck, ParameterCheckDTO>();
             CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
                 .ForMember(dest => dest.ImageDataChecks, opt => opt.MapFrom(src => src.ImageDataChecks));
-            CreateMap<ImageDataCheck, ImageDataCheckDTO>()
-                .ForMember(dest => dest.DataTrackCheckingId, opt => opt.MapFrom(src => src.DataTrackCheckingId))
-                .ForMember(dest => dest.DataTrackChecking, opt => opt.MapFrom(src => src.DataTrackChecking));
+            // CreateMap<ImageDataCheck, ImageDataCheckDTO>()
+            //     .ForMember(dest => dest.DataTrackCheckingId, opt => opt.MapFrom(src => src.DataTrackCheckingId))
+            //     .ForMember(dest => dest.DataTrackChecking, opt => opt.MapFrom(src => src.DataTrackChecking));
 
             CreateMap<SelectOption, SelectOptionDTO>();
             CreateMap<DataContrplType, DataContrplTypeDTO>();

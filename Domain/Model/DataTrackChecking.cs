@@ -14,7 +14,7 @@ namespace Domain.Model
         public Guid  PCID { get; set; }
         public string DTCValue { get; set; }
         
-        public ParameterCheck ParameterChecks { get; set; }
+        public ParameterCheck ParameterCheck { get; set; }
         public DataTrack DataTracks { get; set; }
         // Properti navigasi ke ImageDataCheck
         public ICollection<ImageDataCheck> ImageDataChecks { get; set; }

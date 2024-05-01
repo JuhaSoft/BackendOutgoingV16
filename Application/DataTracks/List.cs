@@ -57,7 +57,7 @@ namespace Application.DataTracks
                     .Include(dt => dt.LastStationID)
                     .ThenInclude(dt => dt.DataLine)
                     .Include(dt => dt.DataTrackCheckings)
-                    .ThenInclude(dt => dt.ParameterChecks)
+                    .ThenInclude(dt => dt.ParameterCheck)
                     .Include(dt => dt.DataTrackCheckings)
                     .ThenInclude(dt => dt.ImageDataChecks)
                    .Where(dt =>

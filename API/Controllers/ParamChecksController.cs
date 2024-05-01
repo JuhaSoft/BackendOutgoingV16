@@ -28,11 +28,11 @@ namespace API.Controllers
         [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<List<DataReferenceDTO>>> GetParameters(
-    [FromQuery] int pageNumber = 1,
-    [FromQuery] int pageSize = 999999,
-    [FromQuery] string searchQuery = "",
-    [FromQuery] string category = "All"
-)
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 999999,
+            [FromQuery] string searchQuery = "",
+            [FromQuery] string category = "All"
+        )
         {
             var query = new Application.ParameterChecks.List.Query
             {
@@ -46,7 +46,7 @@ namespace API.Controllers
 
             return Ok(result);
         }
-
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task <ActionResult<ParameterCheck>>GetPC(Guid Id)
         {
@@ -69,6 +69,27 @@ namespace API.Controllers
 
             
         }
+        [AllowAnonymous]
+        [HttpGet("ByReference/{id}")]
+        public async Task<ActionResult<List<ParameterCheck>>> GetPCByRef(Guid id) // Mengubah tipe balikan dari ActionResult<ParameterCheck> menjadi ActionResult<List<ParameterCheck>>
+        {
+            try
+            {
+                var parameterChecks = await Mediator.Send(new Application.ParameterChecks.DetailByRefrence.Query { Id = id });
+                if (parameterChecks == null || parameterChecks.Count == 0) // Mengubah pengecekan kondisi untuk List<ParameterCheck>
+                {
+                    return NotFound();
+                }
+
+                return parameterChecks;
+            }
+            catch (Exception ex)
+            {
+                // Tangkap kesalahan dan kirim respons error ke client
+                return StatusCode(StatusCodes.Status500InternalServerError, "Error Mengambil data parameter: " + ex.Message);
+            }
+        }
+
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> CreatePC(Application.ParameterChecks.Create.Command command)

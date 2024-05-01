@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Common.DTOs;
 using Common.DTOs.DataTrack;
+using System.Security.Claims;
 
 namespace API.Controllers
 {
@@ -28,71 +29,98 @@ namespace API.Controllers
             this._httpContextAccessor = httpContextAccessor;
         }
         [AllowAnonymous]
-       [HttpGet]
+        [HttpGet]
         public async Task<ActionResult<List<DataTrackDTO>>> GetDataTracks(
-            [FromQuery] int pageNumber = 1, 
+            [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 999999,
             [FromQuery] string SearchQuery = "",
-    [FromQuery] string Category = "All"
+            [FromQuery] string Category = "All"
             )
         {
-            var query = new List.DtQuery { PageNumber = pageNumber, PageSize = pageSize,
+            var query = new List.DtQuery
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
                 SearchQuery = SearchQuery,
                 Category = Category
             };
             var result = await _mediator.Send(query);
             return Ok(result);
         }
-        [HttpGet("{TrackPSN}")]
-        public async Task<ActionResult<DetailDataTrackDto>> GetDataTrack(string TrackPSN)
+        [AllowAnonymous]
+        [HttpGet("order/{order}")]
+        public async Task<ActionResult<List<DataTrackDTO>>> GetDataTracks(
+                string order, // Parameter order yang ditentukan dalam jalur
+                [FromQuery] int pageNumber = 1,
+                [FromQuery] int pageSize = 999999,
+                [FromQuery] string SearchQuery = "",
+                [FromQuery] string Category = "All"
+            )
+        {
+            var query = new ListByOrder.Query
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                SearchQuery = SearchQuery,
+                Category = Category,
+                Order = order // Set nilai order ke dalam objek query
+            };
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{Id}")]
+        public async Task<ActionResult<DetailDataTrackDto>> GetDataTrack(string id)
         {
             try
             {
-                var dataTrackDto = await Mediator.Send(new Details.Query { TrackPSN = TrackPSN });
+                if (!Guid.TryParse(id, out Guid guidId))
+                {
+                    return BadRequest("Invalid ID format");
+                }
+
+                var dataTrackDto = await Mediator.Send(new Details.Query { Id = guidId });
                 if (dataTrackDto == null)
                 {
                     return NotFound();
                 }
 
-                // Buat JsonSerializerOptions dan atur ReferenceHandler.Preserve
-                var options = new JsonSerializerOptions
-                {
-                    ReferenceHandler = ReferenceHandler.Preserve
-                };
-
-                // Serialize objek DataTrack ke JSON dengan menggunakan JsonSerializer
-                var jsonData = JsonSerializer.Serialize(dataTrackDto, options);
-
-                // Deserialisasi JSON kembali menjadi objek DataTrack
-                var deserializedDataTrackDto = JsonSerializer.Deserialize<DetailDataTrackDto>(jsonData, options);
-
-                // Kembalikan objek DataTrack yang telah diserialisasi ulang sebagai respons
-                return deserializedDataTrackDto;
+                return dataTrackDto;
             }
             catch (Exception ex)
             {
-                // Tangkap kesalahan dan kirim respons error ke client
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error Mengambil data Tracking: " + ex.Message);
             }
         }
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateDataTrack(DataTrack dataTrack)
         {
             try
             {
-                return Ok(await _mediator.Send(new Create.Command { DataTrack = dataTrack }));
+                var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                dataTrack.TrackingDateCreate = DateTime.Now;
+                dataTrack.TrackingUserIdChecked = userId;
+                string guidStringWithoutBraces = dataTrack.TrackingLastStationId.ToString().Replace("{", "").Replace("}", "");
+
+
+                return Ok(await _mediator.Send(new Create.Command { Request = dataTrack }));
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam menyimpan: " + ex.Message);
             }
         }
+        [AuthorizeRoles("Admin,Staf")]
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditDataTrack(Guid id,DataTrack dataTrack)
+        public async Task<IActionResult> EditDataTrack(Guid id, DataTrack dataTrack)
         {
             try
             {
-                dataTrack.Id=id;
+                dataTrack.Id = id;
                 return Ok(await _mediator.Send(new Application.DataTracks.Edit.Command { DataTrack = dataTrack }));
             }
             catch (Exception ex)

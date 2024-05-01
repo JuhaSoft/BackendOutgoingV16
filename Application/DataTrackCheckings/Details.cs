@@ -1,4 +1,5 @@
 using AutoMapper;
+using Common.DTOs;
 using Domain.Model;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,36 +14,69 @@ namespace Application.DataTrackCheckings
 {
     public class Details
     {
-        public class Query : IRequest<DataTrackChecking>
+        public class Query : IRequest<IEnumerable<DataTrackCheckingDTO>>
         {
             public Guid Id { get; set; }
         }
-        public class Handler : IRequestHandler<Query, DataTrackChecking>
+
+        public class Handler : IRequestHandler<Query, IEnumerable<DataTrackCheckingDTO>>
         {
             private readonly DataContext _context;
+            private readonly IMapper _mapper;
 
-            public Handler(DataContext context)
+            public Handler(DataContext context, IMapper mapper)
             {
-                this._context = context;
+                _context = context;
+                _mapper = mapper;
             }
+
             public async Task<bool> IsiDUnique(Guid Id)
             {
-                return await _context.DataTrackCheckings.AnyAsync(u => u.Id == Id);
-            }
-            public async Task<DataTrackChecking> Handle(Query request, CancellationToken cancellationToken)
-            {
-                
-                if (!await IsiDUnique(request.Id))
-                {
-                    
-                    throw new Exception("Id  :'" + request.Id + "' Tidak ditemukan.");
-                }
-                return await _context.DataTrackCheckings
-                    .Include(dt => dt.ParameterChecks)
-                    .FirstOrDefaultAsync(u => u.Id == request.Id);
+                return await _context.DataTrackCheckings.AnyAsync(u => u.DataTrackID == Id);
             }
 
-           
+            public async Task<IEnumerable<DataTrackCheckingDTO>> Handle(Query request, CancellationToken cancellationToken)
+            {
+                if (!await IsiDUnique(request.Id))
+                {
+                    throw new Exception("Id :'" + request.Id + "' Tidak ditemukan.");
+                }
+
+                var dataTrackCheckings = await _context.DataTrackCheckings
+                    .Where(dtc => dtc.DataTrackID == request.Id)
+                    .Include(dtc => dtc.ParameterCheck)
+                        .ThenInclude(pc => pc.DataReference)
+                    .Include(dtc => dtc.ImageDataChecks)
+                    .ToListAsync();
+
+                var mappedDataTrackCheckings = _mapper.Map<IEnumerable<DataTrackCheckingDTO>>(dataTrackCheckings);
+
+                foreach (var dto in mappedDataTrackCheckings)
+                {
+                    var parameterCheck = await _context.ParameterChecks
+                        .Include(pc => pc.DataReference)
+                        .FirstOrDefaultAsync(pc => pc.Id == dto.PCID);
+
+                    dto.ParameterCheck = _mapper.Map<ParameterCheckDTO>(parameterCheck);
+                }
+
+                return mappedDataTrackCheckings;
+            }
+            //  public async Task<IEnumerable<DataTrackCheckingDTO>> Handle(Query request, CancellationToken cancellationToken)
+            // {
+            //     if (!await IsiDUnique(request.Id))
+            //     {
+            //         throw new Exception("Id :'" + request.Id + "' Tidak ditemukan.");
+            //     }
+
+            //     var dataTrackCheckings = await _context.DataTrackCheckings
+            //         .Where(dtc => dtc.DataTrackID == request.Id)
+            //         .Include(dtc => dtc.ParameterCheck)
+            //         .Include(dtc => dtc.ImageDataChecks)
+            //         .ToListAsync();
+
+            //     return _mapper.Map<IEnumerable<DataTrackCheckingDTO>>(dataTrackCheckings);
+            // }
         }
     }
 }

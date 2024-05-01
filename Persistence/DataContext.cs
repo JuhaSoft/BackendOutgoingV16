@@ -15,6 +15,7 @@ namespace Persistence
 
 
         public DbSet<SelectOption> SelectOptions { get; set; }
+        public DbSet<TraceProduct> TraceProducts { get; set; }
       
     
         public DbSet<SComboBoxOption> SComboBoxOptions {get;set;}
@@ -71,6 +72,17 @@ namespace Persistence
             .WithMany()
             .HasForeignKey(p => p.DataReferenceId);
 
+            
+            // Configure the relationship between DataTrackChecking and ImageDataCheck
+            modelBuilder.Entity<DataTrackChecking>()
+                .HasMany(dtc => dtc.ImageDataChecks)
+                .WithOne(idc => idc.DataTrackChecking)
+                .HasForeignKey(idc => idc.DataTrackCheckingId);
+            modelBuilder.Entity<DataTrackChecking>()
+                .HasOne(dtc => dtc.ParameterCheck)
+                .WithMany()
+                .HasForeignKey(dtc => dtc.PCID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     
     }

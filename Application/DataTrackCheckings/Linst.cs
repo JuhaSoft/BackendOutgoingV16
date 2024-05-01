@@ -29,14 +29,15 @@ namespace Application.DataTrackCheckings
                 if (request.PageNumber <= 0)
                 {
                     return await _context.DataTrackCheckings
-                    .Include(dt => dt.ParameterChecks)
+                    .Include(dt => dt.ParameterCheck)
+                    .Include(dt => dt.ImageDataChecks)
                     .ToListAsync();
                 }
                 else
                 {
                 
                     return await _context.DataTrackCheckings
-                    .Include(dt => dt.ParameterChecks)
+                    .Include(dt => dt.ParameterCheck)
                         .Skip((request.PageNumber - 1) * request.PageSize)
                         .Take(request.PageSize)
                         .ToListAsync();

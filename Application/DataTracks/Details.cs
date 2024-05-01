@@ -15,7 +15,7 @@ namespace Application.DataTracks
     {
         public class Query : IRequest<DetailDataTrackDto>
         {
-            public string TrackPSN { get; set; }
+            public Guid Id { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, DetailDataTrackDto>
@@ -36,15 +36,15 @@ namespace Application.DataTracks
                     .Include(dt => dt.LastStationID)
                     .ThenInclude(dt => dt.DataLine)
                     .Include(dt => dt.DataTrackCheckings)
-                    .ThenInclude(dt => dt.ParameterChecks)
+                    .ThenInclude(dt => dt.ParameterCheck)
                     .Include(dt => dt.DataTrackCheckings)
                     .ThenInclude(dt => dt.ImageDataChecks)
                     .Where(dt => !dt.DTisDeleted && dt.DataTrackCheckings.All(dtc => !dtc.DTCisDeleted))
-                    .FirstOrDefaultAsync(u => u.TrackPSN == request.TrackPSN);
+                    .FirstOrDefaultAsync(u => u.Id == request.Id);
 
                 if (dataTrack == null)
                 {
-                    throw new Exception("PSN :'" + request.TrackPSN + "' Tidak ditemukan.");
+                    throw new Exception("PSN :'" + request.Id + "' Tidak ditemukan.");
                 }
 
                 return _mapper.Map<DetailDataTrackDto>(dataTrack);

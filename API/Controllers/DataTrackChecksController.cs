@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Application.DataTrackCheckings;
+using Common.DTOs;
 using Domain.Model;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+
 namespace API.Controllers
 {
-    public class DataTrackChecksController :BaseApiController
+    public class DataTrackChecksController : BaseApiController
     {
-       private readonly IMediator _mediator;
+        private readonly IMediator _mediator;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public DataTrackChecksController(IMediator mediator, IHttpContextAccessor httpContextAccessor)
@@ -19,32 +22,32 @@ namespace API.Controllers
             this._mediator = mediator;
             this._httpContextAccessor = httpContextAccessor;
         }
+        [AllowAnonymous]
+
         [HttpGet]
         public async Task<ActionResult<List<DataTrackChecking>>> GetDataTracksChecking()
         {
-            return await Mediator.Send(new  Application.DataTrackCheckings.Linst.DtQuery());
+            return await Mediator.Send(new Application.DataTrackCheckings.Linst.DtQuery());
 
         }
+        [AllowAnonymous]
         [HttpGet("{Id}")]
-        public async Task<ActionResult<DataTrackChecking>> GetDataTrackChecking(Guid id)
+        public async Task<ActionResult<IEnumerable<DataTrackCheckingDTO>>> GetDataTrackChecking(Guid id)
         {
-
             try
             {
-                var dataTrackChecking = await Mediator.Send(new Application.DataTrackCheckings.Details.Query { Id = id });
-                if (dataTrackChecking == null)
+                var dataTrackCheckings = await Mediator.Send(new Details.Query { Id = id });
+                if (dataTrackCheckings == null || !dataTrackCheckings.Any())
                 {
                     return NotFound();
                 }
-
-                return dataTrackChecking;
+                return Ok(dataTrackCheckings);
             }
             catch (Exception ex)
             {
                 // Tangkap kesalahan dan kirim respons error ke client
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error Mengambil data Tracking: " + ex.Message);
             }
-
         }
         [HttpPost]
         public async Task<IActionResult> CreateDataTrackChecking(DataTrackChecking datTrackChecking)
@@ -64,7 +67,7 @@ namespace API.Controllers
             try
             {
                 dataTrackChecking.Id = id;
-                return Ok(await _mediator.Send(new Application.DataTrackCheckings.Edit.Command{DataTrackChecking = dataTrackChecking }));
+                return Ok(await _mediator.Send(new Application.DataTrackCheckings.Edit.Command { DataTrackChecking = dataTrackChecking }));
             }
             catch (Exception ex)
             {
@@ -72,6 +75,8 @@ namespace API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam edit Data Track: " + ex.Message);
             }
         }
+        [Authorize]
+
         [HttpDelete("{Id}")]
         public async Task<IActionResult> DeleteDataTrackChecking(Guid Id)
         {
@@ -86,6 +91,6 @@ namespace API.Controllers
                 // Tangkap kesalahan dan kirim respons error ke client
                 return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam delete user: " + ex.Message);
             }
-        } 
+        }
     }
 }

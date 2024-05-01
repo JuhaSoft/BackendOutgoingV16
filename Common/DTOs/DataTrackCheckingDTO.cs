@@ -15,7 +15,7 @@ namespace Common.DTOs
         public Guid  PCID { get; set; }
         public string DTCValue { get; set; }
         
-        public ParameterCheckDTO ParameterChecks { get; set; }
+        public ParameterCheckDTO? ParameterCheck { get; set; } // Ubah menjadi nullable
         public DataTrackDTO DataTracks { get; set; }
         // Properti navigasi ke ImageDataCheck
         public ICollection<ImageDataCheckDTO> ImageDataChecks { get; set; }
