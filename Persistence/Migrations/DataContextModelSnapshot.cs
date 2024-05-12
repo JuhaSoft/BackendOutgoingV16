@@ -164,11 +164,35 @@ namespace Persistence.Migrations
                     b.ToTable("DataReferences");
                 });
 
+            modelBuilder.Entity("Domain.Model.DataReferenceParameterCheck", b =>
+                {
+                    b.Property<Guid>("DataReferenceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ParameterCheckId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.HasKey("DataReferenceId", "ParameterCheckId");
+
+                    b.HasIndex("ParameterCheckId");
+
+                    b.ToTable("DataReferenceParameterChecks");
+                });
+
             modelBuilder.Entity("Domain.Model.DataTrack", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ApprovalId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("DTisDeleted")
                         .HasColumnType("bit");
@@ -180,7 +204,6 @@ namespace Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("TrackingDateCreate")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("TrackingLastStationId")
@@ -199,6 +222,8 @@ namespace Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovalId");
 
                     b.HasIndex("TrackingLastStationId");
 
@@ -225,16 +250,30 @@ namespace Persistence.Migrations
                     b.Property<Guid>("PCID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ParameterChecksId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DataTrackID");
 
-                    b.HasIndex("ParameterChecksId");
+                    b.HasIndex("PCID");
 
                     b.ToTable("DataTrackCheckings");
+                });
+
+            modelBuilder.Entity("Domain.Model.ErrorMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ErrorCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ErrorMessages");
                 });
 
             modelBuilder.Entity("Domain.Model.ImageDataCheck", b =>
@@ -284,10 +323,10 @@ namespace Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("DataReferenceId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageSampleUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Order")
@@ -295,9 +334,30 @@ namespace Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DataReferenceId");
-
                     b.ToTable("ParameterChecks");
+                });
+
+            modelBuilder.Entity("Domain.Model.ParameterCheckErrorMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ParameterCheckId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ErrorMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id", "ParameterCheckId", "ErrorMessageId");
+
+                    b.HasIndex("ErrorMessageId");
+
+                    b.HasIndex("ParameterCheckId");
+
+                    b.ToTable("ParameterCheckErrorMessages");
                 });
 
             modelBuilder.Entity("Domain.Model.RefreshToken", b =>
@@ -559,8 +619,31 @@ namespace Persistence.Migrations
                     b.Navigation("LastStationID");
                 });
 
+            modelBuilder.Entity("Domain.Model.DataReferenceParameterCheck", b =>
+                {
+                    b.HasOne("Domain.Model.DataReference", "DataReference")
+                        .WithMany("DataReferenceParameterChecks")
+                        .HasForeignKey("DataReferenceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Model.ParameterCheck", "ParameterCheck")
+                        .WithMany("DataReferenceParameterChecks")
+                        .HasForeignKey("ParameterCheckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DataReference");
+
+                    b.Navigation("ParameterCheck");
+                });
+
             modelBuilder.Entity("Domain.Model.DataTrack", b =>
                 {
+                    b.HasOne("Domain.Model.AppUser", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApprovalId");
+
                     b.HasOne("Domain.Model.LastStationID", "LastStationID")
                         .WithMany()
                         .HasForeignKey("TrackingLastStationId")
@@ -570,6 +653,8 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Model.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("TrackingUserIdChecked");
+
+                    b.Navigation("Approver");
 
                     b.Navigation("LastStationID");
 
@@ -584,13 +669,15 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Model.ParameterCheck", "ParameterChecks")
+                    b.HasOne("Domain.Model.ParameterCheck", "ParameterCheck")
                         .WithMany()
-                        .HasForeignKey("ParameterChecksId");
+                        .HasForeignKey("PCID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("DataTracks");
 
-                    b.Navigation("ParameterChecks");
+                    b.Navigation("ParameterCheck");
                 });
 
             modelBuilder.Entity("Domain.Model.ImageDataCheck", b =>
@@ -615,15 +702,23 @@ namespace Persistence.Migrations
                     b.Navigation("DataLine");
                 });
 
-            modelBuilder.Entity("Domain.Model.ParameterCheck", b =>
+            modelBuilder.Entity("Domain.Model.ParameterCheckErrorMessage", b =>
                 {
-                    b.HasOne("Domain.Model.DataReference", "DataReference")
-                        .WithMany()
-                        .HasForeignKey("DataReferenceId")
+                    b.HasOne("Domain.Model.ErrorMessage", "ErrorMessage")
+                        .WithMany("ParameterCheckErrorMessages")
+                        .HasForeignKey("ErrorMessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DataReference");
+                    b.HasOne("Domain.Model.ParameterCheck", "ParameterCheck")
+                        .WithMany("ParameterCheckErrorMessages")
+                        .HasForeignKey("ParameterCheckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ErrorMessage");
+
+                    b.Navigation("ParameterCheck");
                 });
 
             modelBuilder.Entity("Domain.Model.RefreshToken", b =>
@@ -700,6 +795,11 @@ namespace Persistence.Migrations
                     b.Navigation("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Domain.Model.DataReference", b =>
+                {
+                    b.Navigation("DataReferenceParameterChecks");
+                });
+
             modelBuilder.Entity("Domain.Model.DataTrack", b =>
                 {
                     b.Navigation("DataTrackCheckings");
@@ -708,6 +808,18 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.Model.DataTrackChecking", b =>
                 {
                     b.Navigation("ImageDataChecks");
+                });
+
+            modelBuilder.Entity("Domain.Model.ErrorMessage", b =>
+                {
+                    b.Navigation("ParameterCheckErrorMessages");
+                });
+
+            modelBuilder.Entity("Domain.Model.ParameterCheck", b =>
+                {
+                    b.Navigation("DataReferenceParameterChecks");
+
+                    b.Navigation("ParameterCheckErrorMessages");
                 });
 #pragma warning restore 612, 618
         }

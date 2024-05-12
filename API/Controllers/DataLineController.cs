@@ -23,14 +23,14 @@ namespace API.Controllers
             this._mediator = mediator;
             this._httpContextAccessor = httpContextAccessor;
         }
-         [AllowAnonymous]
-                 [HttpGet]
-              public async Task<ActionResult<List<DataLineDTO>>> GetDataLine(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 999999,
-            [FromQuery] string SearchQuery = "",
-             [FromQuery] string Category = "All"
-            )
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<ActionResult<List<DataLineDTO>>> GetDataLine(
+           [FromQuery] int pageNumber = 1,
+           [FromQuery] int pageSize = 999999,
+           [FromQuery] string SearchQuery = "",
+            [FromQuery] string Category = "All"
+           )
         {
             var query = new List.Query
             {
@@ -45,17 +45,17 @@ namespace API.Controllers
         // Endpoint u
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task <ActionResult<DataLine>>GetLine(Guid Id)
+        public async Task<ActionResult<DataLine>> GetLine(Guid Id)
         {
-             try
+            try
             {
-               var dataLine =await Mediator.Send(new Application.DataLines.Detail.Query{Id = Id});
-               if (dataLine == null)
-            {
-                return NotFound();
-            }
+                var dataLine = await Mediator.Send(new Application.DataLines.Detail.Query { Id = Id });
+                if (dataLine == null)
+                {
+                    return NotFound();
+                }
 
-            return dataLine;
+                return dataLine;
             }
             catch (Exception ex)
             {
@@ -64,7 +64,7 @@ namespace API.Controllers
             }
 
 
-            
+
         }
         [AllowAnonymous]
 
@@ -73,7 +73,7 @@ namespace API.Controllers
         {
             try
             {
-                return Ok(await _mediator.Send(new  Application.DataLines.Create.Command { DataLine = dataLine }));
+                return Ok(await _mediator.Send(new Application.DataLines.Create.Command { DataLine = dataLine }));
             }
             catch (Exception ex)
             {
@@ -84,13 +84,13 @@ namespace API.Controllers
         [AllowAnonymous]
 
         [HttpPut("{Id}")]
-        public async Task<IActionResult> EditLine(Guid id,DataLine dataLine)
+        public async Task<IActionResult> EditLine(Guid id, DataLine dataLine)
         {
             try
             {
-                dataLine.Id=id;
+                dataLine.Id = id;
                 // Mengirim permintaan ke mediator untuk membuat user
-                return Ok(await _mediator.Send(new  Application.DataLines.Edit.Command { dataLine = dataLine }));
+                return Ok(await _mediator.Send(new Application.DataLines.Edit.Command { dataLine = dataLine }));
             }
             catch (Exception ex)
             {
@@ -98,15 +98,15 @@ namespace API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam edit user: " + ex.Message);
             }
         }
-         [AllowAnonymous]
-           [HttpDelete("{Id}")]
+        [AllowAnonymous]
+        [HttpDelete("{Id}")]
         public async Task<IActionResult> DeleteLine(Guid Id)
         {
             try
             {
-              
+
                 // Mengirim permintaan ke mediator untuk membuat user
-                return Ok(await _mediator.Send(new  Delete.Command { Id = Id }));
+                return Ok(await _mediator.Send(new Delete.Command { Id = Id }));
             }
             catch (Exception ex)
             {
@@ -114,6 +114,6 @@ namespace API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam delete Parameter: " + ex.Message);
             }
         }
-        
+
     }
 }

@@ -83,6 +83,7 @@ namespace API.Controllers
                 DisplayName = registerDto.DisplayName,
                 UserName = registerDto.Username,
                 Role = registerDto.Role,
+                Email=registerDto.Email
             };
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
@@ -156,6 +157,7 @@ namespace API.Controllers
                 Id = Guid.Parse(user.Id),
                 DisplayName = user.DisplayName,
                 UserName = user.UserName,
+                Email = user.Email,
                 Image = user.Image,
                 Role = user.Role,
                 IsActive = user.IsActive // Properti IsActive
@@ -185,6 +187,7 @@ namespace API.Controllers
             // Update properti user
             user.UserName = updateDto.UserName;
             user.DisplayName = updateDto.DisplayName;
+            user.Email = updateDto.Email;
             user.Role = updateDto.Role;
             user.IsActive = updateDto.IsActive;
 
@@ -395,6 +398,7 @@ namespace API.Controllers
             {
                 Id = Guid.Parse(user.Id),
                 DisplayName = user.DisplayName,
+                Email = user.Email,
                 Image = user.Image,
                 Token = _tokenService.CreateToken(user),
                 UserName = user.UserName,
@@ -410,7 +414,8 @@ namespace API.Controllers
                 DisplayName = user.DisplayName,
                 Image = user.Image,
                 UserName = user.UserName,
-                IsActive=user.IsActive,
+                Email = user.Email,
+                IsActive =user.IsActive,
                 Role = user.Role
             };
         }

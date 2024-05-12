@@ -46,7 +46,7 @@ namespace Application.DataTracks
                 {
                     throw new Exception("ID Untuk PSN" + request.DataTrack.TrackPSN + "' Tidak ditemukan.");
                 }
-
+                var TrackingResultOld = "";
                 var datatrack = await _context.DataTracks
                     .Include(dt => dt.DataTrackCheckings)
                         .ThenInclude(dtc => dtc.ImageDataChecks)
@@ -56,62 +56,17 @@ namespace Application.DataTracks
                 {
                     throw new Exception("Data track tidak ditemukan.");
                 }
-
-                // Update DataTrack
-                _mapper.Map(request.DataTrack, datatrack);
-
-                // Hapus gambar yang tidak digunakan
-                //var existingImageChecks = datatrack.DataTrackCheckings.SelectMany(dtc => dtc.ImageDataChecks).ToList();
-                //var requestImageUrls = request.DataTrack.DataTrackCheckings.SelectMany(dtc => dtc.ImageDataChecks.Select(img => img.ImageUrl)).ToList();
-
-                //var filesToDelete = existingImageChecks
-                //    .Where(img => !string.IsNullOrWhiteSpace(img.ImageUrl)
-                //                && Path.IsPathRooted(img.ImageUrl) // Hanya hapus jika ImageUrl adalah path file
-                //                && !requestImageUrls.Contains(img.ImageUrl))
-                //    .Select(img => Path.Combine(_hostingEnvironment.WebRootPath, img.ImageUrl.TrimStart('/')))
-                //    .ToList();
-
-                //foreach (var file in filesToDelete)
-                //{
-                //    if (File.Exists(file))
-                //    {
-                //        File.Delete(file);
-                //    }
-                //}
-                // Ambil semua ImageDataCheck dari database yang terkait dengan DataTrackID
-                //var existingImageChecks = await _context.DataTrackCheckings
-                //    .Where(dtc => dtc.DataTrackID == request.DataTrack.Id)
-                //    .SelectMany(dtc => dtc.ImageDataChecks)
-                //    .ToListAsync(cancellationToken);
-
-                // Ambil semua ImageUrl dari request
-                //var requestImageUrls = request.DataTrack.DataTrackCheckings
-                //    .SelectMany(dtc => dtc.ImageDataChecks)
-                //    .Select(img => img.ImageUrl)
-                //    .ToList();
-
-                //// Bandingkan ImageUrl dan hapus file jika tidak ada di request, kecuali jika bukan path file
-                //var filesToDelete = existingImageChecks
-                //    .Where(img => !string.IsNullOrWhiteSpace(img.ImageUrl)
-                //                && Path.IsPathRooted(img.ImageUrl) // Hanya hapus jika ImageUrl adalah path file
-                //                && !requestImageUrls.Contains(img.ImageUrl))
-                //    .Select(img => Path.Combine(_hostingEnvironment.WebRootPath, img.ImageUrl.TrimStart('/')))
-                //    .ToList();
-
-                //foreach (var file in filesToDelete)
-                //{
-                //    if (File.Exists(file))
-                //    {
-                //        File.Delete(file);
-                //    }
-                //}
-
-                // Ambil semua ImageDataCheck dari database yang terkait dengan DataTrackID
+                else
+                {
+                    TrackingResultOld = datatrack.TrackingResult;
+                }
+                bool hasError = false;
+               
                 var existingImageChecks = await _context.DataTrackCheckings
-    .Where(dtc => dtc.DataTrackID == request.DataTrack.Id)
-    .SelectMany(dtc => dtc.ImageDataChecks)
-    .Select(img => img.ImageUrl)
-    .ToListAsync(cancellationToken);
+                    .Where(dtc => dtc.DataTrackID == request.DataTrack.Id)
+                    .SelectMany(dtc => dtc.ImageDataChecks)
+                    .Select(img => img.ImageUrl)
+                    .ToListAsync(cancellationToken);
 
                 // Ambil semua ImageUrl dari request dan hapus Host dan Port jika ada
                 var requestImageUrls = request.DataTrack.DataTrackCheckings
@@ -187,9 +142,82 @@ namespace Application.DataTracks
 
                     datatrack.DataTrackCheckings.Add(dtc);
                 }
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    hasError = true;
+                    // Optionally, you can log the error or handle it in another way
+                }
+                if (!hasError)
+                {
+                    // Update DataTrack
+                    _mapper.Map(request.DataTrack, datatrack);
+                    datatrack.TrackingDateCreate = DateTime.Now;
+                    datatrack.TrackingResult = request.DataTrack.TrackingResult;
+                    datatrack.TrackingStatus = request.DataTrack.TrackingStatus;
 
-                await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                var workOrder = await _context.WorkOrders.FirstOrDefaultAsync(wo => wo.WoNumber == datatrack.TrackingWO, cancellationToken);
 
+                if (workOrder != null)
+                {
+                    int failQty;
+                    int passQty;
+
+                    // Periksa apakah workOrder.FailQTY bisa diubah menjadi bilangan bulat
+                    if (int.TryParse(workOrder.FailQTY, out failQty))
+                    {
+                        workOrder.FailQTY = (failQty).ToString();
+                    }
+                    else
+                    {
+                        workOrder.FailQTY = "0";
+                    }
+
+                    // Periksa apakah workOrder.PassQTY bisa diubah menjadi bilangan bulat
+                    if (int.TryParse(workOrder.PassQTY, out passQty))
+                    {
+                        workOrder.PassQTY = (passQty).ToString();
+                    }
+                    else
+                    {
+                        workOrder.PassQTY = "0";
+                    }
+                    // Cek apakah TrackingResult diubah dari Fail ke Pass
+                    if (TrackingResultOld == "FAIL" && datatrack.TrackingResult == "PASS")
+                    {
+                       if (int.Parse(workOrder.FailQTY) < 1)
+                        {
+                            workOrder.FailQTY = "0";
+                        }
+                        else
+                        {
+                            workOrder.FailQTY = (int.Parse(workOrder.FailQTY) - 1).ToString();
+                        }
+                        
+                        workOrder.PassQTY = (int.Parse(workOrder.PassQTY) + 1).ToString();
+                    }
+                    // Cek apakah TrackingResult diubah dari Pass ke Fail
+                    else if (TrackingResultOld == "PASS" && datatrack.TrackingResult == "FAIL")
+                    {
+                        workOrder.FailQTY = (int.Parse(workOrder.FailQTY) + 1).ToString();
+                        if (int.Parse(workOrder.PassQTY) < 1)
+                        {
+                            workOrder.PassQTY = "0";
+                        }
+                        else
+                        {
+                            workOrder.PassQTY = (int.Parse(workOrder.PassQTY) - 1).ToString();
+                        }
+                    }
+
+                    // Simpan perubahan pada WorkOrder
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
                 return Unit.Value;
             }
 

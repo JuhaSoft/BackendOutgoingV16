@@ -16,14 +16,14 @@ namespace Domain.Model
         public string TrackingWO { get; set; }
         public Guid TrackingLastStationId { get; set; }
         public LastStationID LastStationID { get; set; }
-        // DataInsert akan otomatis diatur ketika data disisipkan
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime TrackingDateCreate { get; set; }
         public string TrackingResult { get; set; }
         public string TrackingStatus { get; set; }
-          public string TrackingUserIdChecked { get; set; }
+        public string TrackingUserIdChecked { get; set; } // ID navigasi ke AppUser untuk pengguna yang melakukan pengecekan
         public AppUser User { get; set; }
-        public List< DataTrackChecking> DataTrackCheckings { get; set; }
+        public List<DataTrackChecking> DataTrackCheckings { get; set; }
+        public string ApprovalId { get; set; } // ID navigasi ke AppUser untuk pemberi persetujuan
+        public AppUser Approver { get; set; }
         public bool DTisDeleted { get; set; }
         
     }

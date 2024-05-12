@@ -31,7 +31,39 @@ namespace Application.DataReferences
                 {
                     throw new Exception("Reference  sudah terdaftar.");
                 }
-                _context.DataReferences.Add(request.DataReference);
+
+
+                var datareference = new DataReference
+                {
+                    Id = Guid.NewGuid(),
+                    RefereceName = request.DataReference.RefereceName,
+                    PsnPos = request.DataReference.PsnPos,
+                    RefPos = request.DataReference.RefPos,
+                    RefCompare = request.DataReference.RefCompare,
+                    StationID = request.DataReference.StationID,
+                    isDeleted =false,
+                    DataReferenceParameterChecks = new List<DataReferenceParameterCheck>()
+                };
+                int order = 1;
+                foreach (var datareferenceParameter in request.DataReference.DataReferenceParameterChecks)
+                {
+                   
+
+                    // Buat ParameterCheckErrorMessage baru
+                    var datareferenceParamcheck = new DataReferenceParameterCheck
+                    {
+                        Id = Guid.NewGuid(),
+                        DataReferenceId = datareference.Id,
+                        ParameterCheckId = datareferenceParameter.ParameterCheckId,
+                        Order = order
+                    };
+
+                    // Tambahkan ke koleksi ParameterCheckErrorMessages pada ParameterCheck
+                    datareference.DataReferenceParameterChecks.Add(datareferenceParamcheck);
+                    order++;
+                }
+                await _context.DataReferences.AddAsync(datareference);
+                //_context.DataReferences.Add(request.DataReference);
                 await _context.SaveChangesAsync();
                 return Unit.Value;
             }

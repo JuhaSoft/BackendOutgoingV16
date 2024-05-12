@@ -8,6 +8,7 @@ using Domain.Model;
 using MediatR;
 using Persistence;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.DataTracks
 {
@@ -120,6 +121,63 @@ namespace Application.DataTracks
                 {
                     _context.DataTracks.Add(dataTrack);
                     await _context.SaveChangesAsync();
+                }
+                var workOrder = await _context.WorkOrders.FirstOrDefaultAsync(wo => wo.WoNumber == dataTrack.TrackingWO, cancellationToken);
+
+                if (workOrder != null)
+                {
+                    int failQty;
+                    int passQty;
+
+                    // Periksa apakah workOrder.FailQTY bisa diubah menjadi bilangan bulat
+                    if (int.TryParse(workOrder.FailQTY, out failQty))
+                    {
+                        workOrder.FailQTY = (failQty).ToString();
+                    }
+                    else
+                    {
+                        workOrder.FailQTY = "0";
+                    }
+
+                    // Periksa apakah workOrder.PassQTY bisa diubah menjadi bilangan bulat
+                    if (int.TryParse(workOrder.PassQTY, out passQty))
+                    {
+                        workOrder.PassQTY = (passQty).ToString();
+                    }
+                    else
+                    {
+                        workOrder.PassQTY = "0";
+                    }
+                    // Cek apakah TrackingResult diubah dari Fail ke Pass
+                    if ( dataTrack.TrackingResult == "PASS")
+                    {
+                        if (int.Parse(workOrder.FailQTY) < 1)
+                        {
+                            workOrder.FailQTY = "0";
+                        }
+                        else
+                        {
+                            workOrder.FailQTY = (int.Parse(workOrder.FailQTY)).ToString();
+                        }
+
+                        workOrder.PassQTY = (int.Parse(workOrder.PassQTY) + 1).ToString();
+                    }
+                    // Cek apakah TrackingResult diubah dari Pass ke Fail
+                    else if ( dataTrack.TrackingResult == "FAIL")
+                    {
+                        workOrder.FailQTY = (int.Parse(workOrder.FailQTY) + 1).ToString();
+                        if (int.Parse(workOrder.PassQTY) < 1)
+                        {
+                            workOrder.PassQTY = "0";
+                        }
+                        else
+                        {
+                            workOrder.PassQTY = (int.Parse(workOrder.PassQTY)).ToString();
+                        }
+                    }
+
+                    // Simpan perubahan pada WorkOrder
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
 
                 return Unit.Value;

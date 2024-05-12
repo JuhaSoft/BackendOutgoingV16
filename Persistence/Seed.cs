@@ -268,83 +268,10 @@ namespace Persistence
             await context.SaveChangesAsync();
         }
 
-        public static async Task SeedParameterCheckData(DataContext context)
-        {
-
-            // Hash password menggunakan salt yang baru dibuat
-
-            if (context.ParameterChecks.Any()) return;
-
-            var parameterCheck = new List<ParameterCheck>
-            {
-                new ParameterCheck
-
-                {
-                     Id = Guid.NewGuid(),
-                      Order=1,
-                   DataReferenceId=Guid.Parse("348D3DEA-D647-4925-9784-08DC5D5B23D3"),
-                },
-                 new ParameterCheck
-                {
-                     Id = Guid.NewGuid(),
-                      Order=2,
-                   DataReferenceId=Guid.Parse("348D3DEA-D647-4925-9784-08DC5D5B23D3"),
-                },
-                new ParameterCheck
-                {
-                     Id = Guid.NewGuid(),
-                     Order=1,
-                   DataReferenceId=Guid.Parse("5B93A59C-9987-4FE8-9785-08DC5D5B23D3"),
-                },
-                new ParameterCheck
-                {
-                     Id = Guid.NewGuid(),
-                     Order=2,
-                   DataReferenceId=Guid.Parse("5B93A59C-9987-4FE8-9785-08DC5D5B23D3"),
-                },
+         
 
 
-
-            };
-
-            await context.ParameterChecks.AddRangeAsync(parameterCheck);
-            await context.SaveChangesAsync();
-        }
-
-
-        public static async Task SeedDTCheckData(DataContext context)
-        {
-
-            // Hash password menggunakan salt yang baru dibuat
-
-            if (context.DataTrackCheckings.Any()) return;
-
-            var datatrackchecking = new List<DataTrackChecking>
-            {
-                new DataTrackChecking
-
-                {
-                     Id = Guid.NewGuid(),
-                    DataTrackID = Guid.Parse("5F467111-EE88-410C-52BA-08DC3840975C"),
-                    PCID=Guid.Parse("EDD006BA-B338-455B-8C88-147FC8412EBB"),
-                    DTCValue="OK",
-                    DTCisDeleted=false
-                },
-                new DataTrackChecking
-
-                {
-                     Id = Guid.NewGuid(),
-                    DataTrackID = Guid.Parse("5F467111-EE88-410C-52BA-08DC3840975C"),
-                    PCID=Guid.Parse("51A74F7A-4BCF-4D54-80ED-A14E3C67B78D"),
-                    DTCValue="OK",
-                    DTCisDeleted=false
-                },
-
-            };
-
-            await context.DataTrackCheckings.AddRangeAsync(datatrackchecking);
-            await context.SaveChangesAsync();
-        }
+        
         public static async Task SeedDTCheckImageData(DataContext context)
         {
 

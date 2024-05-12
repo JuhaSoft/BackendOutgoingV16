@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Application.ParameterChecks;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using static Application.ParameterChecks.List;
 
 namespace API.Controllers
 {
@@ -27,25 +28,24 @@ namespace API.Controllers
         }
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<List<DataReferenceDTO>>> GetParameters(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 999999,
-            [FromQuery] string searchQuery = "",
-            [FromQuery] string category = "All"
-        )
+        public async Task<ActionResult<List<ParameterCheckDTO>>> GetDataPC(
+           [FromQuery] int pageNumber = 1,
+           [FromQuery] int pageSize = 999999,
+           [FromQuery] string SearchQuery = "",
+            [FromQuery] string Category = "All"
+           )
         {
-            var query = new Application.ParameterChecks.List.Query
+            var query = new List2.Query
             {
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                SearchQuery = searchQuery,
-                Category = category
+                SearchQuery = SearchQuery,
+                Category = Category
             };
-
             var result = await _mediator.Send(query);
-
             return Ok(result);
         }
+
         [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task <ActionResult<ParameterCheck>>GetPC(Guid Id)
@@ -106,17 +106,32 @@ namespace API.Controllers
         }
         [AllowAnonymous]
 
-        [HttpPut("{Id}")]
-        public async Task<IActionResult> EditPC(Application.ParameterChecks.Edit.Command command)
+        //[HttpPut("{Id}")]
+        //public async Task<IActionResult> EditPC(Application.ParameterChecks.Edit.Command command)
+        //{
+        //    try
+        //    {
+        //        return Ok(await _mediator.Send(command));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Tangkap kesalahan dan kirim respons error ke client
+        //        return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam Edit Parameter: " + ex.Message);
+        //    }
+        //}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditPC(Guid id, ParameterCheck parameterChecks)
         {
             try
             {
-                return Ok(await _mediator.Send(command));
+                parameterChecks.Id = id;
+        
+                return Ok(await _mediator.Send(new Application.ParameterChecks.Edit.Command { ParamID = id, ParameterChecks = parameterChecks }));
             }
             catch (Exception ex)
             {
                 // Tangkap kesalahan dan kirim respons error ke client
-                return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam Edit Parameter: " + ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Terjadi kesalahan dalam edit Data Track: " + ex.Message);
             }
         }
         [AllowAnonymous]

@@ -37,7 +37,9 @@ namespace Application.ParameterChecks
                     throw new Exception("Id :'" + request.Id + "' Tidak ditemukan.");
                 }
                 return await _context.ParameterChecks
-                 .Include(dt => dt.DataReference)
+                 .Include(pc => pc.ParameterCheckErrorMessages)
+                    .ThenInclude(pcem => pcem.ErrorMessage)
+                .Include(pc => pc.DataReferenceParameterChecks)
                 .FirstOrDefaultAsync(u => u.Id == request.Id);
             }
 

@@ -12,12 +12,9 @@ namespace Domain.Model
         public string PsnPos { get; set; }
         public string RefPos { get; set; }
         public string RefCompare { get; set; }
-
         public Guid StationID { get; set; }
         public bool isDeleted { get; set; }
-
-        // Navigation property untuk relasi satu-ke-banyak
         public LastStationID LastStationID { get; set; }
-        //public List<ParameterCheck> ParameterChecks { get; set; }
+         public ICollection<DataReferenceParameterCheck> DataReferenceParameterChecks { get; set; }
     }
 }

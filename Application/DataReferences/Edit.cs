@@ -46,16 +46,34 @@ namespace Application.DataReferences
 
                 if (dataRefCheck != null)
                 {
-                    dataRefCheck.RefereceName = request.dataReference.RefereceName; // Ganti Property1 dengan properti yang ingin Anda perbarui
-                    dataRefCheck.StationID = request.dataReference.StationID; // Ganti Property2 dengan properti yang ingin Anda perbarui
-                     dataRefCheck.PsnPos = request.dataReference.PsnPos; // Ganti Property1 dengan properti yang ingin Anda perbarui
-                    dataRefCheck.RefPos = request.dataReference.RefPos; 
-                     dataRefCheck.RefCompare = request.dataReference.RefCompare; // Ganti Property1 dengan properti yang ingin Anda perbarui
+                    // Hapus semua entri DataReferenceParameterChecks yang ada dengan DataReferenceId sama
+                    var existingChecks = _context.DataReferenceParameterChecks
+                        .Where(c => c.DataReferenceId == dataRefCheck.Id);
+                    _context.DataReferenceParameterChecks.RemoveRange(existingChecks);
+
+                    // Tambahkan entri baru dari permintaan
+                    foreach (var parameterCheck in request.dataReference.DataReferenceParameterChecks)
+                    {
+                        dataRefCheck.DataReferenceParameterChecks.Add(new DataReferenceParameterCheck
+                        {
+                            ParameterCheckId = parameterCheck.ParameterCheckId,
+                            Order = parameterCheck.Order,
+                            DataReferenceId = dataRefCheck.Id
+                        });
+                    }
+
+                    // Perbarui properti lainnya pada dataRefCheck
+                    dataRefCheck.RefereceName = request.dataReference.RefereceName;
+                    dataRefCheck.StationID = request.dataReference.StationID;
+                    dataRefCheck.PsnPos = request.dataReference.PsnPos;
+                    dataRefCheck.RefPos = request.dataReference.RefPos;
+                    dataRefCheck.RefCompare = request.dataReference.RefCompare;
+
                     await _context.SaveChangesAsync();
                 }
-            //    _mapper.Map(request.dataLine, request.dataLine);
-            //await _context.SaveChangesAsync();
-            return Unit.Value;
+                //    _mapper.Map(request.dataLine, request.dataLine);
+                //await _context.SaveChangesAsync();
+                return Unit.Value;
             }
 
         }

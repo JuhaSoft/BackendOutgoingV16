@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Common.DTOs;
 using Domain.Model;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +13,7 @@ namespace Application.ParameterChecks
 {
     public class List
     {
-        public class GetDataReferencesQuery : IRequest<ListResult<DataReferenceDTO>>
+        public class GetDataReferencesQuery : IRequest<ListResult<DataReference>>
         {
             public int PageNumber { get; set; }
             public int PageSize { get; set; }
@@ -29,7 +28,7 @@ namespace Application.ParameterChecks
                 SearchQuery = searchQuery;
             }
         }
-        public class Query : IRequest<ListResult<ParameterCheckDTO>>
+        public class Query : IRequest<ListResult<ParameterCheck>>
         {
             public int PageNumber { get; set; }
             public int PageSize { get; set; }
@@ -46,7 +45,7 @@ namespace Application.ParameterChecks
             public int PageSize { get; set; }
         }
 
-        public class Handler : IRequestHandler<Query, ListResult<ParameterCheckDTO>>
+        public class Handler : IRequestHandler<Query, ListResult<ParameterCheck>>
         {
             private readonly DataContext _context;
             private readonly IMapper _mapper;
@@ -57,63 +56,69 @@ namespace Application.ParameterChecks
                 _mapper = mapper;
             }
 
-            public async Task<ListResult<ParameterCheckDTO>> Handle(Query request, CancellationToken cancellationToken)
+            public async Task<ListResult<ParameterCheck>> Handle(Query request, CancellationToken cancellationToken)
             {
                 IQueryable<ParameterCheck> query = _context.ParameterChecks
-                     .Include(dt => dt.DataReference);
+                                                    .Include(pc => pc.ParameterCheckErrorMessages)
+                                                        .ThenInclude(pcem => pcem.ErrorMessage)
+                                                    .Include(pc => pc.DataReferenceParameterChecks);
+                //var totalItems = await query.CountAsync();
+                IQueryable<ParameterCheck> filteredQuery;
+
                 if (!string.IsNullOrEmpty(request.SearchQuery))
                 {
                     if (request.Category == "All" && !string.IsNullOrEmpty(request.SearchQuery))
                     {
-                        query = query.Where(dl =>
-                            dl.Description.Contains(request.SearchQuery) ||
-                            dl.DataReference.RefereceName.Contains(request.SearchQuery) 
-
+                        filteredQuery = query.Where(pc =>
+                            pc.Description.Contains(request.SearchQuery) ||
+                            pc.DataReferenceParameterChecks.Any(drpc => drpc.DataReference.RefereceName.Contains(request.SearchQuery)) ||
+                            pc.ParameterCheckErrorMessages.Any(pcem => pcem.ErrorMessage.ErrorDescription.Contains(request.SearchQuery))
                         );
-                        query = query.OrderBy(p => p.DataReferenceId).ThenBy(p => p.Order);
-
                     }
                     else if (request.Category == "All" && string.IsNullOrEmpty(request.SearchQuery))
                     {
-                        query = query.OrderBy(p => p.DataReferenceId).ThenBy(p => p.Order);
+                        filteredQuery = query;
                     }
                     else
                     {
                         switch (request.Category)
                         {
                             case "Description":
-                                query = query.Where(dt => dt.Description.Contains(request.SearchQuery));
+                                filteredQuery = query.Where(pc => pc.Description.Contains(request.SearchQuery));
                                 break;
                             case "RefereceName":
-                                query = query.Where(dt => dt.DataReference.RefereceName.Contains(request.SearchQuery));
+                                filteredQuery = query.Where(pc => pc.DataReferenceParameterChecks.Any(drpc => drpc.DataReference.RefereceName.Contains(request.SearchQuery)));
                                 break;
-                          
+                            case "ErrorDescription":
+                                filteredQuery = query.Where(pc => pc.ParameterCheckErrorMessages.Any(pcem => pcem.ErrorMessage.ErrorDescription.Contains(request.SearchQuery)));
+                                break;
                             default:
-                                // Handle unsupported category here
+                                filteredQuery = query;
                                 break;
                         }
-                        query = query.OrderBy(p => p.DataReferenceId).ThenBy(p => p.Order);
                     }
                 }
                 else
                 {
-                    query = query.OrderBy(p => p.DataReferenceId).ThenBy(p => p.Order);
+                    filteredQuery = query;
                 }
 
+                var totalItems = await filteredQuery.CountAsync();
 
-
-                var totalItems = await query.CountAsync();
                 var currentPage = request.PageNumber;
                 var pageSize = request.PageSize;
 
-                var dataParam = await query
+                var dataParam = filteredQuery
                     .Skip((currentPage - 1) * pageSize)
                     .Take(pageSize)
-                    .ToListAsync();
+                    .AsEnumerable() // Evaluasi di sisi klien
+                    .OrderBy(p => p.DataReferenceParameterChecks?.Count() ?? 0)
+                        .ThenBy(p => p.Order == 0 ? 0 : p.Order)
+                    .ToList();
 
-                var parameterCheck = _mapper.Map<List<ParameterCheckDTO>>(dataParam);
+                var parameterCheck = _mapper.Map<List<ParameterCheck>>(dataParam);
 
-                return new ListResult<ParameterCheckDTO>
+                return new ListResult<ParameterCheck>
                 {
                     Items = parameterCheck,
                     TotalItems = totalItems,

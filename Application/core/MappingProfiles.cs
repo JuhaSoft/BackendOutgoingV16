@@ -85,7 +85,29 @@ CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
                 .ForMember(dest => dest.isDeleted, opt => opt.MapFrom(src => src.isDeleted))
                 .ForMember(dest => dest.LastStation, opt => opt.MapFrom(src => src.LastStationID)); // DataLine dipetakan ke LastStation
 
+            CreateMap<ParameterCheck, ParameterCheckDTO>()
+               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+               .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+               .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order))
+               .ForMember(dest => dest.ImageSampleUrl, opt => opt.MapFrom(src => src.ImageSampleUrl))
+               .ForMember(dest => dest.ParameterCheckErrorMessages, opt => opt.MapFrom(src => src.ParameterCheckErrorMessages))
+               .ReverseMap();
 
+            CreateMap<ParameterCheckErrorMessage, ParameterCheckErrorMessageDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.ParameterCheckId, opt => opt.MapFrom(src => src.ParameterCheckId))
+                .ForMember(dest => dest.ParameterCheck, opt => opt.Ignore()) // Ignore mapping untuk ParameterCheck
+                .ForMember(dest => dest.ErrorMessageId, opt => opt.MapFrom(src => src.ErrorMessageId))
+                .ForMember(dest => dest.ErrorMessage, opt => opt.MapFrom(src => src.ErrorMessage))
+                .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order))
+                .ReverseMap();
+
+            CreateMap<Domain.Model.ErrorMessage, ErrorMessageDTO>()
+    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+    .ForMember(dest => dest.ErrorCode, opt => opt.MapFrom(src => src.ErrorCode))
+    .ForMember(dest => dest.ErrorDescription, opt => opt.MapFrom(src => src.ErrorDescription))
+    .ForMember(dest => dest.ParameterCheckErrorMessages, opt => opt.Ignore())
+    .ReverseMap();
 
         }
     }

@@ -13,9 +13,7 @@ namespace Common.DTOs
         public Guid Id { get; set; }
         public string Description { get; set; }
         public int Order { get; set; } // Urutan deskripsi di dalam grup reference
-
-        // Relasi ke tabel DataReference
-        public Guid DataReferenceId { get; set; }
-        public DataReferenceDTO DataReference { get; set; }
+        public string ImageSampleUrl { get; set; }
+        public ICollection<ParameterCheckErrorMessageDto> ParameterCheckErrorMessages { get; set; }
     }
 }

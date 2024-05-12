@@ -45,7 +45,7 @@ namespace Application.DataTrackCheckings
                 var dataTrackCheckings = await _context.DataTrackCheckings
                     .Where(dtc => dtc.DataTrackID == request.Id)
                     .Include(dtc => dtc.ParameterCheck)
-                        .ThenInclude(pc => pc.DataReference)
+                        .ThenInclude(pc => pc.DataReferenceParameterChecks)
                     .Include(dtc => dtc.ImageDataChecks)
                     .ToListAsync();
 
@@ -54,7 +54,7 @@ namespace Application.DataTrackCheckings
                 foreach (var dto in mappedDataTrackCheckings)
                 {
                     var parameterCheck = await _context.ParameterChecks
-                        .Include(pc => pc.DataReference)
+                        .Include(pc => pc.DataReferenceParameterChecks)
                         .FirstOrDefaultAsync(pc => pc.Id == dto.PCID);
 
                     dto.ParameterCheck = _mapper.Map<ParameterCheckDTO>(parameterCheck);

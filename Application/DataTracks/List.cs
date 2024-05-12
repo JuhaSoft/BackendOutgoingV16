@@ -61,13 +61,13 @@ namespace Application.DataTracks
                     .Include(dt => dt.DataTrackCheckings)
                     .ThenInclude(dt => dt.ImageDataChecks)
                    .Where(dt =>
-    !dt.DTisDeleted &&
-    dt.DataTrackCheckings.All(dtc => !dtc.DTCisDeleted) &&
-    (
-        string.IsNullOrEmpty(request.SearchQuery) ||
-        (
-            request.Category == "All" &&
-            (
+                !dt.DTisDeleted &&
+                dt.DataTrackCheckings.All(dtc => !dtc.DTCisDeleted) &&
+                (
+                    string.IsNullOrEmpty(request.SearchQuery) ||
+                    (
+                        request.Category == "All" &&
+                        (
                 dt.User.DisplayName.Contains(request.SearchQuery) ||
                 dt.TrackPSN.Contains(request.SearchQuery) ||
                 dt.TrackReference.Contains(request.SearchQuery) ||

@@ -2,57 +2,57 @@ using System.Reflection.Emit;
 using Domain;
 using Domain.Model;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace Persistence
 {
     public class DataContext : IdentityDbContext<AppUser>
     {
-      public DataContext(DbContextOptions<DataContext> options) : base(options)
-{
-}
-
+        public DataContext(DbContextOptions<DataContext> options) : base(options)
+        {
+        }
 
         public DbSet<SelectOption> SelectOptions { get; set; }
         public DbSet<TraceProduct> TraceProducts { get; set; }
-      
-    
-        public DbSet<SComboBoxOption> SComboBoxOptions {get;set;}
+
+        public DbSet<SComboBoxOption> SComboBoxOptions { get; set; }
         public DbSet<DataContrplType> DataContrplTypes { get; set; }
         public DbSet<LastStationID> LastStationIDs { get; set; }
         public DbSet<DataLine> DataLines { get; set; }
-        public DbSet<DataReference> DataReferences { get; set; }
+
         public DbSet<DataTrack> DataTracks { get; set; }
         public DbSet<DataTrackChecking> DataTrackCheckings { get; set; }
         public DbSet<ImageDataCheck> ImageDataChecks { get; set; }
         public DbSet<ParameterCheck> ParameterChecks { get; set; }
-        public DbSet<WorkOrder> WorkOrders{ get; set; }
+        public DbSet<ErrorMessage> ErrorMessages { get; set; }
+        public DbSet<ParameterCheckErrorMessage> ParameterCheckErrorMessages { get; set; }
+        public DbSet<WorkOrder> WorkOrders { get; set; }
+        public DbSet<DataReference> DataReferences { get; set; }
+        public DbSet<DataReferenceParameterCheck> DataReferenceParameterChecks { get; set; }
 
-   
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-             base.OnModelCreating(modelBuilder);
-           
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<LastStationID>()
                 .HasOne(ls => ls.DataLine)
                 .WithMany()
-                .HasForeignKey(ls => ls.LineId );
+                .HasForeignKey(ls => ls.LineId);
             modelBuilder.Entity<DataTrackChecking>()
                 .HasOne(hp => hp.DataTracks)
                 .WithMany(p => p.DataTrackCheckings)
-                .HasForeignKey(hp => hp.DataTrackID); // Ubah kunci asing menjadi DataTrackID
-            
+                .HasForeignKey(hp => hp.DataTrackID);
+
             modelBuilder.Entity<ImageDataCheck>()
                 .HasOne(idc => idc.DataTrackChecking)
                 .WithMany(dt => dt.ImageDataChecks)
                 .HasForeignKey(idc => idc.DataTrackCheckingId)
                 .HasPrincipalKey(dt => dt.Id);
-               modelBuilder.Entity<DataTrack>()
-                 .HasOne(d => d.User)
+            modelBuilder.Entity<DataTrack>()
+                .HasOne(d => d.User)
                 .WithMany()
                 .HasForeignKey(d => d.TrackingUserIdChecked)
-                .IsRequired(false); 
+                .IsRequired(false);
             modelBuilder.Entity<DataTrack>()
                 .HasOne(dt => dt.LastStationID)
                 .WithMany()
@@ -61,19 +61,27 @@ namespace Persistence
                 .HasOne(d => d.LastStationID)
                 .WithMany()
                 .HasForeignKey(d => d.StationID)
-                .OnDelete(DeleteBehavior.NoAction); // Menghindari kaskade delete
+                .OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<WorkOrder>()
-                 .HasOne(d => d.User)
+                .HasOne(d => d.User)
                 .WithMany()
                 .HasForeignKey(d => d.UserIdCreate)
-                .IsRequired(false); 
-                modelBuilder.Entity<ParameterCheck>()
-            .HasOne(p => p.DataReference)
-            .WithMany()
-            .HasForeignKey(p => p.DataReferenceId);
+                .IsRequired(false);
 
-            
-            // Configure the relationship between DataTrackChecking and ImageDataCheck
+            modelBuilder.Entity<ParameterCheckErrorMessage>()
+                // .HasKey(pcem => new { pcem.ParameterCheckId, pcem.ErrorMessageId });
+                .HasKey(pcem => new { pcem.Id, pcem.ParameterCheckId, pcem.ErrorMessageId });
+
+            modelBuilder.Entity<ParameterCheckErrorMessage>()
+                .HasOne(pcem => pcem.ParameterCheck)
+                .WithMany(pc => pc.ParameterCheckErrorMessages)
+                .HasForeignKey(pcem => pcem.ParameterCheckId);
+
+            modelBuilder.Entity<ParameterCheckErrorMessage>()
+                .HasOne(pcem => pcem.ErrorMessage)
+                .WithMany(em => em.ParameterCheckErrorMessages)
+                .HasForeignKey(pcem => pcem.ErrorMessageId);
+
             modelBuilder.Entity<DataTrackChecking>()
                 .HasMany(dtc => dtc.ImageDataChecks)
                 .WithOne(idc => idc.DataTrackChecking)
@@ -83,8 +91,47 @@ namespace Persistence
                 .WithMany()
                 .HasForeignKey(dtc => dtc.PCID)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DataTrack>()
+                .HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.TrackingUserIdChecked)
+                .IsRequired(false);
+
+            modelBuilder.Entity<DataTrack>()
+                .HasOne(d => d.Approver)
+                .WithMany()
+                .HasForeignKey(d => d.ApprovalId)
+                .IsRequired(false);
+            modelBuilder.Entity<ParameterCheck>()
+                  .HasMany(pc => pc.ParameterCheckErrorMessages)
+                  .WithOne(drpc => drpc.ParameterCheck)
+                  .HasForeignKey(drpc => drpc.ParameterCheckId);
+            modelBuilder.Entity<DataReferenceParameterCheck>()
+                //.HasKey(drpc => new { drpc.DataReferenceId, drpc.ParameterCheckId });
+            .HasKey(drpc => new { drpc.Id, drpc.DataReferenceId, drpc.ParameterCheckId });
+
+            modelBuilder.Entity<DataReferenceParameterCheck>()
+                .HasOne(drpc => drpc.DataReference)
+                .WithMany(dr => dr.DataReferenceParameterChecks)
+                .HasForeignKey(drpc => drpc.DataReferenceId);
+
+            modelBuilder.Entity<DataReferenceParameterCheck>()
+                .HasOne(drpc => drpc.ParameterCheck)
+                .WithMany(pc => pc.DataReferenceParameterChecks)
+                .HasForeignKey(drpc => drpc.ParameterCheckId);
+            modelBuilder.Entity<ParameterCheck>()
+                .HasMany(pc => pc.ParameterCheckErrorMessages)
+                .WithOne(drpc => drpc.ParameterCheck)
+                .HasForeignKey(drpc => drpc.ParameterCheckId);
+            modelBuilder.Entity<ParameterCheckErrorMessage>()
+               .HasOne(pcem => pcem.ErrorMessage)
+               .WithMany()
+               .HasForeignKey(pcem => pcem.ErrorMessageId);
+            modelBuilder.Entity<ErrorMessage>()
+            .HasMany(em => em.ParameterCheckErrorMessages)
+            .WithOne(pcem => pcem.ErrorMessage)
+            .HasForeignKey(pcem => pcem.ErrorMessageId);
         }
-    
     }
-     
 }

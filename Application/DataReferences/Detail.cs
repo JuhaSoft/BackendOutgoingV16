@@ -39,6 +39,9 @@ namespace Application.DataReferences
                 return await _context.DataReferences
                      .Include(dt => dt.LastStationID)
                      .ThenInclude(dt => dt.DataLine)
+                     .Include(dt => dt.DataReferenceParameterChecks)
+                     .ThenInclude(drpc => drpc.ParameterCheck)
+                     .ThenInclude(prc => prc.ParameterCheckErrorMessages)
                     .FirstOrDefaultAsync(u => u.Id == request.Id);
             }
 

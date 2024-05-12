@@ -39,8 +39,8 @@ namespace Application.ParameterChecks
                 }
 
                 return await _context.ParameterChecks
-                    .Include(dt => dt.DataReference)
-                    .Where(u => u.DataReferenceId == request.Id)
+                    .Include(dt => dt.DataReferenceParameterChecks)
+                    //.Where(u => u.DataReferenceId == request.Id)
                     .ToListAsync(); // Mengubah metode dari FirstOrDefaultAsync menjadi ToListAsync
             }
         }

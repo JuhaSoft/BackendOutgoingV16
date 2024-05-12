@@ -121,6 +121,8 @@ namespace API.Controllers
             try
             {
                 dataTrack.Id = id;
+                var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                dataTrack.TrackingUserIdChecked = userId;
                 return Ok(await _mediator.Send(new Application.DataTracks.Edit.Command { DataTrack = dataTrack }));
             }
             catch (Exception ex)

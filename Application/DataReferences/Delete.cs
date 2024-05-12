@@ -35,6 +35,9 @@ namespace Application.DataReferences
                     throw new Exception("Data   Tidak ditemukan.");
                 }
                 _context.Remove(dataRef);
+                var existingChecks = _context.DataReferenceParameterChecks
+                        .Where(c => c.DataReferenceId == request.Id);
+                _context.DataReferenceParameterChecks.RemoveRange(existingChecks);
                 await _context.SaveChangesAsync();
                 return Unit.Value;
             }
