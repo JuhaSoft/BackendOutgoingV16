@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20240516020439_aprovers")]
+    partial class aprovers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -240,14 +242,14 @@ namespace Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("Appove")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ApprRemaks")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ApprovalId")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("Approve")
-                        .HasColumnType("bit");
 
                     b.Property<string>("DTCValue")
                         .HasColumnType("nvarchar(max)");

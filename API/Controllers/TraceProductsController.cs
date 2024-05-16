@@ -30,25 +30,29 @@ namespace API.Controllers
             }
 
             // Query untuk mencari semua data berdasarkan SerialNumber
-            var traceProducts = await _dbContext.TraceProducts
-                .Where(p => p.SerialNumber == paramSn)
+            var traceProducts = await _dbContext.DataTracks
+                .Where(p => p.TrackPSN == paramSn)
                 .ToListAsync();
 
             if (traceProducts.Count == 0)
             {
-                return Ok(new { Status = "Fail", Description = "Data not found." });
+                return Ok(new { Status = "Pass", Description = "" });
+                //return Ok(new { Status = "Fail", Description = "Data not found." });
             }
-
-            // Memeriksa apakah ada StationName yang cocok dengan paramStationNumber
-            var stationMatch = traceProducts.FirstOrDefault(p => p.StationName == paramStationNumber);
-
-            if (stationMatch == null)
+            else
             {
-                return Ok(new { Status = "Fail", Description = "Station not found for given SerialNumber." });
+                return Ok(new { Status = "Fail", Description = "Already Check" });
             }
+            // Memeriksa apakah ada StationName yang cocok dengan paramStationNumber
+            //var stationMatch = traceProducts.FirstOrDefault(p => p.StationName == paramStationNumber);
+
+            //if (stationMatch == null)
+            //{
+            //    return Ok(new { Status = "Fail", Description = "Station not found for given SerialNumber." });
+            //}
 
             // Mengembalikan status dan deskripsi
-            return Ok(new { Status = stationMatch.Status, Description = "" });
+            //return Ok(new { Status = "Pass", Description = "" });
         }
     }
     }

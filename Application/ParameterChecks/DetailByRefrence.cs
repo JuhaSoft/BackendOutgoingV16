@@ -12,12 +12,12 @@ namespace Application.ParameterChecks
 {
     public class DetailByRefrence
     {
-        public class Query : IRequest<List<ParameterCheck>> // Mengubah tipe balikan menjadi List<ParameterCheck>
+        public class Query : IRequest<ParameterCheck> // Mengubah tipe balikan menjadi List<ParameterCheck>
         {
             public Guid Id { get; set; }
         }
 
-        public class Handler : IRequestHandler<Query, List<ParameterCheck>> // Mengubah tipe balikan menjadi List<ParameterCheck>
+        public class Handler : IRequestHandler<Query, ParameterCheck> // Mengubah tipe balikan menjadi List<ParameterCheck>
         {
             private readonly DataContext _context;
 
@@ -31,7 +31,7 @@ namespace Application.ParameterChecks
                 return await _context.DataReferences.AnyAsync(u => u.Id == id);
             }
 
-            public async Task<List<ParameterCheck>> Handle(Query request, CancellationToken cancellationToken) // Mengubah tipe balikan menjadi List<ParameterCheck>
+            public async Task<ParameterCheck> Handle(Query request, CancellationToken cancellationToken) // Mengubah tipe balikan menjadi List<ParameterCheck>
             {
                 if (!await IsPCUnique(request.Id))
                 {
@@ -39,9 +39,12 @@ namespace Application.ParameterChecks
                 }
 
                 return await _context.ParameterChecks
-                    .Include(dt => dt.DataReferenceParameterChecks)
-                    //.Where(u => u.DataReferenceId == request.Id)
-                    .ToListAsync(); // Mengubah metode dari FirstOrDefaultAsync menjadi ToListAsync
+                 .Include(pc => pc.ParameterCheckErrorMessages)
+                    .ThenInclude(pcem => pcem.ErrorMessage)
+                .Include(pc => pc.DataReferenceParameterChecks)
+               .FirstOrDefaultAsync(u => u.DataReferenceParameterChecks.Any(drpc => drpc.DataReferenceId == request.Id));
+
+
             }
         }
     }

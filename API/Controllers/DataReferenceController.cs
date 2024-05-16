@@ -44,7 +44,7 @@ namespace API.Controllers
         [AllowAnonymous]
 
         [HttpGet("{id}")]
-        public async Task <ActionResult<DataReference>>GetReference(Guid Id)
+        public async Task <ActionResult<DataReferenceDTO>>GetReference(Guid Id)
         {
              try
             {

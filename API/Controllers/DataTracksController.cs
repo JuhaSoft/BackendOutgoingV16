@@ -94,7 +94,8 @@ namespace API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error Mengambil data Tracking: " + ex.Message);
             }
         }
-        [Authorize]
+        //[Authorize]
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> CreateDataTrack(DataTrack dataTrack)
         {
@@ -103,6 +104,7 @@ namespace API.Controllers
                 var userId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 dataTrack.TrackingDateCreate = DateTime.Now;
                 dataTrack.TrackingUserIdChecked = userId;
+                
                 string guidStringWithoutBraces = dataTrack.TrackingLastStationId.ToString().Replace("{", "").Replace("}", "");
 
 

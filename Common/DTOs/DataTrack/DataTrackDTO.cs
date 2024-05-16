@@ -22,6 +22,7 @@ namespace Common.DTOs
         public DateTime TrackingDateCreate { get; set; }
         public string TrackingResult { get; set; }
         public string TrackingStatus { get; set; }
+        public string ApprovalId { get; set; }
         //public Guid TrackingUserIdChecked { get; set; }
         public UserDataDto User { get; set; }
         //public List<DataTrackCheckingDTO> DataTrackCheckings { get; set; }

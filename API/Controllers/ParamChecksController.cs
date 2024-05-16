@@ -71,17 +71,25 @@ namespace API.Controllers
         }
         [AllowAnonymous]
         [HttpGet("ByReference/{id}")]
-        public async Task<ActionResult<List<ParameterCheck>>> GetPCByRef(Guid id) // Mengubah tipe balikan dari ActionResult<ParameterCheck> menjadi ActionResult<List<ParameterCheck>>
+        public async Task<ActionResult<ParameterCheck>> GetPCByRef(Guid id) // Mengubah tipe balikan dari ActionResult<ParameterCheck> menjadi ActionResult<List<ParameterCheck>>
         {
             try
             {
-                var parameterChecks = await Mediator.Send(new Application.ParameterChecks.DetailByRefrence.Query { Id = id });
-                if (parameterChecks == null || parameterChecks.Count == 0) // Mengubah pengecekan kondisi untuk List<ParameterCheck>
+                try
                 {
-                    return NotFound();
-                }
+                    var parameterCheck = await Mediator.Send(new Application.ParameterChecks.DetailByRefrence.Query { Id = id });
+                    if (parameterCheck == null)
+                    {
+                        return NotFound();
+                    }
 
-                return parameterChecks;
+                    return parameterCheck;
+                }
+                catch (Exception ex)
+                {
+                    // Tangkap kesalahan dan kirim respons error ke client
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Error Mengambil data parameter: " + ex.Message);
+                }
             }
             catch (Exception ex)
             {

@@ -16,6 +16,8 @@ namespace Application.core
     {
         public MappingProfiles()
         {
+            
+
             CreateMap<DataTrack, DataTrackDTO>()
                 .ForMember(dest => dest.LastStationID, opt => opt.MapFrom(src => src.LastStationID))
                 .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserDataDto
@@ -53,20 +55,23 @@ namespace Application.core
                      LineName = src.DataLine.LineName,
                      isDeleted = src.DataLine.isDeleted
                  }));
-                
-CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
-    .ForMember(dest => dest.ParameterCheck, opt => opt.MapFrom(src => src.ParameterCheck))
-    .ForMember(dest => dest.ImageDataChecks, opt => opt.MapFrom(src => src.ImageDataChecks));
 
+            CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
+                .ForMember(dest => dest.ParameterCheck, opt => opt.MapFrom(src => src.ParameterCheck))
+                .ForMember(dest => dest.ImageDataChecks, opt => opt.MapFrom(src => src.ImageDataChecks));
 
+            CreateMap<AppUser, UserDto>()
+    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+    .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+    .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.DisplayName))
+    // Tambahkan pemetaan untuk properti lain yang dibutuhkan
+    ;
             CreateMap<ImageDataCheck, ImageDataCheckDTO>();
             CreateMap<ParameterCheck, ParameterCheckDTO>();
             CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
                 .ForMember(dest => dest.ImageDataChecks, opt => opt.MapFrom(src => src.ImageDataChecks));
-            // CreateMap<ImageDataCheck, ImageDataCheckDTO>()
-            //     .ForMember(dest => dest.DataTrackCheckingId, opt => opt.MapFrom(src => src.DataTrackCheckingId))
-            //     .ForMember(dest => dest.DataTrackChecking, opt => opt.MapFrom(src => src.DataTrackChecking));
-
+            
             CreateMap<SelectOption, SelectOptionDTO>();
             CreateMap<DataContrplType, DataContrplTypeDTO>();
             CreateMap<SComboBoxOption, SComboBoxOptionDTO>();
@@ -101,13 +106,32 @@ CreateMap<DataTrackChecking, DataTrackCheckingDTO>()
                 .ForMember(dest => dest.ErrorMessage, opt => opt.MapFrom(src => src.ErrorMessage))
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order))
                 .ReverseMap();
+            CreateMap<ErrorTrack, ErrorTrackDTO>()
+              .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+              .ForMember(dest => dest.PCID, opt => opt.MapFrom(src => src.ParameterCheck))
+              .ForMember(dest => dest.ErrorId, opt => opt.MapFrom(src => src.ErrorId))
+              .ForMember(dest => dest.ErrorMessage, opt => opt.MapFrom(src => src.ErrorMessage))
+              .ForMember(dest => dest.TrackPSN, opt => opt.MapFrom(src => src.TrackPSN))
+              .ForMember(dest => dest.TrackingDateCreate, opt => opt.MapFrom(src => src.TrackingDateCreate))
+              .ReverseMap();
 
             CreateMap<Domain.Model.ErrorMessage, ErrorMessageDTO>()
-    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-    .ForMember(dest => dest.ErrorCode, opt => opt.MapFrom(src => src.ErrorCode))
-    .ForMember(dest => dest.ErrorDescription, opt => opt.MapFrom(src => src.ErrorDescription))
-    .ForMember(dest => dest.ParameterCheckErrorMessages, opt => opt.Ignore())
-    .ReverseMap();
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.ErrorCode, opt => opt.MapFrom(src => src.ErrorCode))
+                .ForMember(dest => dest.ErrorDescription, opt => opt.MapFrom(src => src.ErrorDescription))
+                .ForMember(dest => dest.ParameterCheckErrorMessages, opt => opt.Ignore())
+                .ReverseMap();
+            CreateMap<DataReferenceParameterCheck, DataReferenceParameterCheckDTO>()
+                   .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                   .ForMember(dest => dest.DataReferenceId, opt => opt.MapFrom(src => src.DataReferenceId))
+                   .ForMember(dest => dest.ParameterCheckId, opt => opt.MapFrom(src => src.ParameterCheckId))
+                   .ForMember(dest => dest.ParameterCheck, opt => opt.MapFrom(src => src.ParameterCheck));
+            CreateMap<Domain.Model.ErrorMessage, ErrorMessageDTO>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.ErrorCode, opt => opt.MapFrom(src => src.ErrorCode))
+                .ForMember(dest => dest.ErrorDescription, opt => opt.MapFrom(src => src.ErrorDescription))
+                .ForMember(dest => dest.ParameterCheckErrorMessages, opt => opt.Ignore())
+                .ReverseMap();
 
         }
     }

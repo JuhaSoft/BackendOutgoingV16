@@ -29,6 +29,7 @@ namespace Persistence
         public DbSet<WorkOrder> WorkOrders { get; set; }
         public DbSet<DataReference> DataReferences { get; set; }
         public DbSet<DataReferenceParameterCheck> DataReferenceParameterChecks { get; set; }
+        public DbSet<ErrorTrack> ErrorTrack { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,7 +70,6 @@ namespace Persistence
                 .IsRequired(false);
 
             modelBuilder.Entity<ParameterCheckErrorMessage>()
-                // .HasKey(pcem => new { pcem.ParameterCheckId, pcem.ErrorMessageId });
                 .HasKey(pcem => new { pcem.Id, pcem.ParameterCheckId, pcem.ErrorMessageId });
 
             modelBuilder.Entity<ParameterCheckErrorMessage>()
@@ -103,12 +103,17 @@ namespace Persistence
                 .WithMany()
                 .HasForeignKey(d => d.ApprovalId)
                 .IsRequired(false);
+            modelBuilder.Entity<DataTrackChecking>()
+                .HasOne(d => d.Approver)
+                .WithMany()
+                .HasForeignKey(d => d.ApprovalId)
+                .IsRequired(false);
             modelBuilder.Entity<ParameterCheck>()
                   .HasMany(pc => pc.ParameterCheckErrorMessages)
                   .WithOne(drpc => drpc.ParameterCheck)
                   .HasForeignKey(drpc => drpc.ParameterCheckId);
             modelBuilder.Entity<DataReferenceParameterCheck>()
-                //.HasKey(drpc => new { drpc.DataReferenceId, drpc.ParameterCheckId });
+            //.HasKey(drpc => new { drpc.DataReferenceId, drpc.ParameterCheckId });
             .HasKey(drpc => new { drpc.Id, drpc.DataReferenceId, drpc.ParameterCheckId });
 
             modelBuilder.Entity<DataReferenceParameterCheck>()
@@ -129,9 +134,37 @@ namespace Persistence
                .WithMany()
                .HasForeignKey(pcem => pcem.ErrorMessageId);
             modelBuilder.Entity<ErrorMessage>()
-            .HasMany(em => em.ParameterCheckErrorMessages)
-            .WithOne(pcem => pcem.ErrorMessage)
-            .HasForeignKey(pcem => pcem.ErrorMessageId);
+                .HasMany(em => em.ParameterCheckErrorMessages)
+                .WithOne(pcem => pcem.ErrorMessage)
+                .HasForeignKey(pcem => pcem.ErrorMessageId);
+            modelBuilder.Entity<DataTrackChecking>()
+                .HasOne(dtc => dtc.ErrorMessage)
+                .WithMany()
+                .HasForeignKey(dtc => dtc.ErrorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            //modelBuilder.Entity<DataTrackChecking>()
+            //    .HasOne(dtc => dtc.Approver)
+            //    .WithMany()
+            //    .HasForeignKey(dtc => dtc.ApprovalId)
+            //    .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ErrorTrack>()
+                .HasKey(pcem => new { pcem.Id, pcem.PCID, pcem.ErrorId });
+            modelBuilder.Entity<ErrorTrack>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.ParameterCheck)
+                      .WithMany()  // No navigation property in ParameterCheck
+                      .HasForeignKey(e => e.PCID)
+                      .OnDelete(DeleteBehavior.Cascade);  // Optional: define the delete behavior
+
+                entity.HasOne(e => e.ErrorMessage)
+                      .WithMany()  // No navigation property in ErrorMessage
+                      .HasForeignKey(e => e.ErrorId)
+                      .OnDelete(DeleteBehavior.SetNull); // Optional: define the delete behavior
+            });
+
+
         }
     }
 }

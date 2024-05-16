@@ -50,15 +50,26 @@ namespace Application.DataTracks
 
                 foreach (var dtc in request.Request.DataTrackCheckings)
                 {
+                    if (dtc.DTCValue != "Pass" && dtc.Approve == true)
+                    {
+                        dataTrack.ApprovalId = request.Request.TrackingUserIdChecked;
+
+
+                    }
                     var dataTrackChecking = new DataTrackChecking
                     {
                         Id = Guid.NewGuid(),
                         DataTrackID = dataTrack.Id,
                         PCID = Guid.Parse(dtc.PCID.ToString().Replace("{", "").Replace("}", "")),
                         DTCValue = dtc.DTCValue,
+                        Approve=dtc.Approve,
+                        ApprovalId= dtc.Approve != true ? null: dataTrack.TrackingUserIdChecked,
+                        ErrorId = dtc.DTCValue != "Fail" ? null : dtc.ErrorId,
                         DTCisDeleted = dtc.DTCisDeleted,
+                        ApprRemaks= dtc.ApprRemaks,
                         ImageDataChecks = new List<ImageDataCheck>()
                     };
+
 
                     foreach (var image in dtc.ImageDataChecks)
                     {
@@ -119,8 +130,39 @@ namespace Application.DataTracks
 
                 if (!hasError)
                 {
-                    _context.DataTracks.Add(dataTrack);
-                    await _context.SaveChangesAsync();
+                    try
+                    {
+                        _context.DataTracks.Add(dataTrack);
+                        await _context.SaveChangesAsync();
+                        foreach (var dtce in request.Request.DataTrackCheckings)
+                        {
+                            if(dtce.DTCValue != "Pass")
+                            {
+                                ErrorTrack errorTrack = new ErrorTrack
+                                {
+                                    Id = Guid.NewGuid(),
+                                    TrackPSN = dataTrack.TrackPSN,
+                                    TrackingDateCreate = dataTrack.TrackingDateCreate,
+                                    PCID = Guid.Parse(dtce.PCID.ToString().Replace("{", "").Replace("}", "")),
+                                    //ParameterCheck = null, // Ganti dengan ParameterCheck yang sesuai
+                                    ErrorId = Guid.Parse(dtce.ErrorId.ToString().Replace("{", "").Replace("}", "")),
+                                    //ErrorMessage = null // Ganti dengan ErrorMessage yang sesuai
+                                };
+
+                                // Simpan objek ErrorTrack ke dalam basis data
+                                _context.ErrorTrack.Add(errorTrack);
+                                await _context.SaveChangesAsync();
+                            }
+                        }
+                            // Cek apakah TrackingStatus tidak sama dengan "Pass"
+                            
+                    }
+                    catch (Exception ex)
+                    {
+                        // Tangani exception di sini
+                        Console.WriteLine($"Error saat menyimpan data: {ex.Message}");
+                        Console.WriteLine(ex.InnerException.Message);
+                    }
                 }
                 var workOrder = await _context.WorkOrders.FirstOrDefaultAsync(wo => wo.WoNumber == dataTrack.TrackingWO, cancellationToken);
 
