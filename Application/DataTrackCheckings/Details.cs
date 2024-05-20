@@ -37,7 +37,6 @@ namespace Application.DataTrackCheckings
 
             public async Task<IEnumerable<DataTrackCheckingDTO>> Handle(Query request, CancellationToken cancellationToken)
             {
-
                 if (!await IsiDUnique(request.Id))
                 {
                     throw new Exception("Id :'" + request.Id + "' Tidak ditemukan.");
@@ -52,30 +51,66 @@ namespace Application.DataTrackCheckings
                     .Include(dtc => dtc.Approver)
                     .ToListAsync();
 
-                var mappedDataTrackCheckings = dataTrackCheckings.Select(dtc => _mapper.Map<DataTrackCheckingDTO>(dtc)).ToList();
-                //var mappedDataTrackCheckings = _mapper.Map<IEnumerable<DataTrackCheckingDTO>>(dataTrackCheckings);
-                //var mappedDataTrackCheckings = dataTrackCheckings.ProjectTo<DataTrackCheckingDTO>(_mapper.ConfigurationProvider);
-                foreach (var dto in mappedDataTrackCheckings)
+                var mappedDataTrackCheckings = new List<DataTrackCheckingDTO>();
+
+                foreach (var dataTrackChecking in dataTrackCheckings)
                 {
+                    var mappedDataTrackChecking = _mapper.Map<DataTrackCheckingDTO>(dataTrackChecking);
+
+                    // Ambil ParameterCheck
                     var parameterCheck = await _context.ParameterChecks
                         .Include(pc => pc.DataReferenceParameterChecks)
                         .Include(pc => pc.ParameterCheckErrorMessages)
-                        .FirstOrDefaultAsync(pc => pc.Id == dto.PCID);
+                        .FirstOrDefaultAsync(pc => pc.Id == mappedDataTrackChecking.PCID);
 
-                    dto.ParameterCheck = _mapper.Map<ParameterCheckDTO>(parameterCheck);
+                    mappedDataTrackChecking.ParameterCheck = _mapper.Map<ParameterCheckDTO>(parameterCheck);
 
-                    if (dto.ErrorMessage != null)
+                    // Ambil ErrorMessage jika ada
+                    if (mappedDataTrackChecking.ErrorMessage != null)
                     {
-                        var errorMessage = await _context.ErrorMessages.FindAsync(dto.ErrorMessage.Id);
-                        dto.ErrorMessage = _mapper.Map<ErrorMessageDTO>(errorMessage);
+                        var errorMessage = await _context.ErrorMessages.FindAsync(mappedDataTrackChecking.ErrorMessage.Id);
+                        mappedDataTrackChecking.ErrorMessage = _mapper.Map<ErrorMessageDTO>(errorMessage);
                     }
+
+                    // Ambil ErrorTracks
+                    await AddErrorTracks(mappedDataTrackChecking);
+
+                    mappedDataTrackCheckings.Add(mappedDataTrackChecking);
                 }
 
                 return mappedDataTrackCheckings;
-
-
             }
 
+            private async Task AddErrorTracks(DataTrackCheckingDTO mappedDataTrackChecking)
+            {
+                var sixMonthsAgo = DateTime.Today.AddMonths(-6);
+
+                var errorTracks = await _context.ErrorTrack
+                    .Where(et => et.PCID == mappedDataTrackChecking.PCID && et.TrackingDateCreate >= sixMonthsAgo)
+                    .GroupBy(et => new { et.ErrorId, et.ErrorMessage.ErrorCode, et.ErrorMessage.ErrorDescription })
+                    .Select(group => new
+                    {
+                        ErrorId = group.Key.ErrorId,
+                        ErrorCode = group.Key.ErrorCode,
+                        ErrorDescription = group.Key.ErrorDescription,
+                        Count = group.Count() // Menggunakan group.Count() untuk mendapatkan jumlahnya
+                    })
+                    .OrderByDescending(group => group.Count)
+                    .Take(5)
+                    .ToListAsync();
+
+                // Konversi ke DTO
+                var errorTrackDTOs = errorTracks.Select(et => new ErrorMessageDatatrackDTO
+                {
+                    ErrorId = et.ErrorId,
+                    ErrorCode = et.ErrorCode,
+                    ErrorDescription = et.ErrorDescription,
+                    Count = et.Count
+                }).ToList();
+
+                // Tambahkan ErrorTracks ke dalam DataTrackCheckingDTO
+                mappedDataTrackChecking.ErrorTracks = errorTrackDTOs;
+            }
         }
     }
 }

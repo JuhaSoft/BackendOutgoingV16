@@ -18,6 +18,8 @@ using Microsoft.AspNetCore.Hosting;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Png; // Import PngEncoder
+using System.Net.Mail;
+using System.Net;
 
 namespace API.Controllers
 {
@@ -96,7 +98,37 @@ namespace API.Controllers
                 {
                     return BadRequest("Failed to assign role to user.");
                 }
+                if (user.Email !=null)
+                {
 
+                
+                // Konfigurasikan pengaturan SMTP
+                var smtpClient = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new NetworkCredential("gugai.way@gmail.com", "pktb dsso aeeb wewf"),
+                    EnableSsl = true
+                };
+                    string namaUser = user.DisplayName;
+                    string password = "Pass1234";
+                    string Role = user.Role;
+                    var mailMessage = new MailMessage
+                {
+                    From = new MailAddress("gugai.way@gmail.com"),
+                    Subject = "Application Registed",
+                        Body = string.Format(" Hi, {0} Kamu sudah terdaftar di aplikasi sebagai {2}. Password mu {1}, silahkan login, update profile dan ganti password.", namaUser, password, Role)
+                    };
+                mailMessage.To.Add(new MailAddress(user.Email));
+
+                try
+                {
+                    await smtpClient.SendMailAsync(mailMessage);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Gagal mengirim email ke {user.Email}: {ex.Message}");
+                }
+                }
                 return CreateUserObject(user);
             }
 
@@ -278,6 +310,7 @@ namespace API.Controllers
             // Update properti user
             user.UserName = updateDto.UserName;
             user.DisplayName = updateDto.DisplayName;
+            user.Email = updateDto.Email;
 
             // Melakukan update user
             var result = await _userManager.UpdateAsync(user);

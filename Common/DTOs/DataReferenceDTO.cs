@@ -19,5 +19,7 @@ namespace Common.DTOs
         public LastStationIDDTO LastStation { get; set; }
         //public List<ParameterCheckDTO> ParameterChecks { get; set; }
         public ICollection<DataReferenceParameterCheckDTO> DataReferenceParameterChecks { get; set; }
+        public List<ErrorMessageDatatrackDTO> TopErrors { get; set; }
+
     }
 }

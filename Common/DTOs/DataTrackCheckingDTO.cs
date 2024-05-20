@@ -1,5 +1,7 @@
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.DTOs.User;
@@ -8,7 +10,7 @@ namespace Common.DTOs
 {
     public class DataTrackCheckingDTO
     {
-
+[AllowNull]
        //Cara agar tidak auto increment karena jika ada id otomatis dijadikan Primari key dan otomatis auto increment
         // [DatabaseGenerated(DatabaseGeneratedOption.None)] 
         public Guid Id { get; set; }
@@ -28,5 +30,6 @@ namespace Common.DTOs
         // Properti navigasi ke ImageDataCheck
         public ICollection<ImageDataCheckDTO> ImageDataChecks { get; set; }
         public bool DTCisDeleted { get; set; }
+        public List<ErrorMessageDatatrackDTO> ErrorTracks { get; set; }
     }
 }

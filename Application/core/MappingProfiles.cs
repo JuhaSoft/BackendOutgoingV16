@@ -106,7 +106,7 @@ namespace Application.core
                 .ForMember(dest => dest.ErrorMessage, opt => opt.MapFrom(src => src.ErrorMessage))
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order))
                 .ReverseMap();
-            CreateMap<ErrorTrack, ErrorTrackDTO>()
+            CreateMap<Domain.Model.ErrorTrack, ErrorTrackDTO>()
               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
               .ForMember(dest => dest.PCID, opt => opt.MapFrom(src => src.ParameterCheck))
               .ForMember(dest => dest.ErrorId, opt => opt.MapFrom(src => src.ErrorId))
@@ -114,6 +114,15 @@ namespace Application.core
               .ForMember(dest => dest.TrackPSN, opt => opt.MapFrom(src => src.TrackPSN))
               .ForMember(dest => dest.TrackingDateCreate, opt => opt.MapFrom(src => src.TrackingDateCreate))
               .ReverseMap();
+              CreateMap<Domain.Model.ErrorTrack, ErrorTrackChartDTO>()
+               .ForMember(dest => dest.ErrorId, opt => opt.MapFrom(src => src.ErrorId))
+              .ForMember(dest => dest.ErrorMessage, opt => opt.MapFrom(src => src.ErrorMessage))
+              .ForMember(dest => dest.TrackPSN, opt => opt.MapFrom(src => src.TrackPSN))
+              .ForMember(dest => dest.ErrorCode, opt => opt.MapFrom(src => src.ErrorMessage.ErrorCode))
+              .ForMember(dest => dest.ErrorDescription, opt => opt.MapFrom(src => src.ErrorMessage.ErrorDescription))
+              .ForMember(dest => dest.TrackingDateCreate, opt => opt.MapFrom(src => src.TrackingDateCreate))
+              .ReverseMap();
+
 
             CreateMap<Domain.Model.ErrorMessage, ErrorMessageDTO>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -132,7 +141,12 @@ namespace Application.core
                 .ForMember(dest => dest.ErrorDescription, opt => opt.MapFrom(src => src.ErrorDescription))
                 .ForMember(dest => dest.ParameterCheckErrorMessages, opt => opt.Ignore())
                 .ReverseMap();
-
+            CreateMap<DataTrack, DataTrackGrapDTO>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.TrackingDateCreate, opt => opt.MapFrom(src => src.TrackingDateCreate))
+                .ForMember(dest => dest.TrackingResult, opt => opt.MapFrom(src => src.TrackingResult))
+                .ForMember(dest => dest.TrackingStatus, opt => opt.MapFrom(src => src.TrackingStatus))
+                .ForMember(dest => dest.DTisDeleted, opt => opt.MapFrom(src => src.DTisDeleted));
         }
     }
 }

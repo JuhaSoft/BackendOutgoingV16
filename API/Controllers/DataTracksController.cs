@@ -47,6 +47,24 @@ namespace API.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+        
+        [AllowAnonymous]
+        [HttpGet("Chart")]
+        public async Task<ActionResult<List<DataTrackGrapDTO>>> GetDataTracksGraf(
+   
+            [FromQuery] string Start = "",
+            [FromQuery] string EndDate = ""
+            )
+        {
+            var query = new ListChart.DtQuery
+            {
+              
+                Start = Start,
+                EndDate = EndDate
+            };
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
         [AllowAnonymous]
         [HttpGet("order/{order}")]
         public async Task<ActionResult<List<DataTrackDTO>>> GetDataTracks(

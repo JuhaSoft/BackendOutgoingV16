@@ -15,7 +15,8 @@ namespace API.Extensions
     public static class ApplicationServicesExtensions
     {
         public static IServiceCollection AddApolicationServices(this IServiceCollection services,
-        IConfiguration config){
+        IConfiguration config)
+        {
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
@@ -30,7 +31,7 @@ namespace API.Extensions
             // });
             services.AddMediatR(typeof(List.Handler).Assembly);
             services.AddAutoMapper(typeof(MappingProfiles).Assembly);
-
+            services.AddSignalR();
             return services;
         }
     }

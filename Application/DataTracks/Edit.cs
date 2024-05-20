@@ -61,7 +61,7 @@ namespace Application.DataTracks
                     TrackingResultOld = datatrack.TrackingResult;
                 }
                 bool hasError = false;
-               
+
                 var existingImageChecks = await _context.DataTrackCheckings
                     .Where(dtc => dtc.DataTrackID == request.DataTrack.Id)
                     .SelectMany(dtc => dtc.ImageDataChecks)
@@ -92,22 +92,59 @@ namespace Application.DataTracks
                     }
                 }
 
-
                 // Hapus DataTrackCheckings dan ImageDataChecks lama
                 var existingDataTrackCheckings = datatrack.DataTrackCheckings.ToList();
                 _context.DataTrackCheckings.RemoveRange(existingDataTrackCheckings);
+                await _context.SaveChangesAsync(cancellationToken); // Ensure the changes are saved
 
-                // Insert DataTrackCheckings dan ImageDataChecks baru
+                // Validasi ErrorId sebelum melakukan insert dan ganti Guid.Empty dengan null
+                var errorIds = request.DataTrack.DataTrackCheckings.Select(dtc => dtc.ErrorId).Distinct().ToList();
+                var validErrorIds = await _context.ErrorMessages
+                    .Where(em => errorIds.Contains(em.Id))
+                    .Select(em => em.Id)
+                    .ToListAsync(cancellationToken);
+                Guid? approvalId = null;
+                bool? approver = false;
                 foreach (var requestDtc in request.DataTrack.DataTrackCheckings)
                 {
+                    // Ubah Guid.Empty menjadi null
+                    if (requestDtc.ErrorId == Guid.Empty)
+                    {
+                        requestDtc.ErrorId = null;
+                    }
+
+                    if (requestDtc.ErrorId != null && !validErrorIds.Contains(requestDtc.ErrorId.Value))
+                    {
+                        throw new Exception($"ErrorId {requestDtc.ErrorId} tidak ditemukan di tabel ErrorMessages.");
+                    }
+                    if (requestDtc.Approve)
+                    {
+                        // Konversi request.DataTrack.TrackingUserIdChecked menjadi Guid
+                        Guid userIdChecked;
+                        if (Guid.TryParse(request.DataTrack.TrackingUserIdChecked, out userIdChecked))
+                        {
+                            approvalId = userIdChecked;
+                            approver = true;
+                        }
+                        else
+                        {
+                            // Jika konversi gagal, Anda dapat menentukan tindakan yang sesuai, seperti melempar exception atau menangani kasus tersebut.
+                            throw new Exception("Nilai request.DataTrack.TrackingUserIdChecked tidak valid.");
+                        }
+                    }
                     var dtc = new DataTrackChecking
                     {
                         DataTrackID = datatrack.Id,
                         PCID = requestDtc.PCID,
                         DTCValue = requestDtc.DTCValue,
-                        ImageDataChecks = new List<ImageDataCheck>() // Inisialisasi ImageDataChecks
+                        ErrorId = requestDtc.ErrorId,
+                        ApprovalId = approvalId?.ToString(),
+                        ApprRemaks = requestDtc.ApprRemaks,
+                        Approve = requestDtc.Approve,
+                        ImageDataChecks = new List<ImageDataCheck>()
                     };
-
+                    datatrack.ApprovalId = approvalId?.ToString();
+                    //datatrack.Approve = approver;
                     foreach (var requestImage in requestDtc.ImageDataChecks)
                     {
                         if (requestImage.ImageUrl.StartsWith("data:image"))
@@ -125,7 +162,6 @@ namespace Application.DataTracks
                             uploadsPath = "/" + uploadsPath;
                             dtc.ImageDataChecks.Add(new ImageDataCheck
                             {
-                                
                                 ImageUrl = Path.Combine(uploadsPath, fileName)
                             });
                         }
@@ -135,13 +171,13 @@ namespace Application.DataTracks
                             dtc.ImageDataChecks.Add(new ImageDataCheck
                             {
                                 ImageUrl = requestImage.ImageUrl.Replace($"{_httpContextAccessor.HttpContext?.Request.Scheme}://{_httpContextAccessor.HttpContext?.Request.Host}/", "/")
-                            
                             });
                         }
                     }
 
                     datatrack.DataTrackCheckings.Add(dtc);
                 }
+
                 try
                 {
                     await _context.SaveChangesAsync(cancellationToken);
@@ -151,16 +187,18 @@ namespace Application.DataTracks
                     hasError = true;
                     // Optionally, you can log the error or handle it in another way
                 }
+
                 if (!hasError)
                 {
                     // Update DataTrack
                     _mapper.Map(request.DataTrack, datatrack);
-                    datatrack.TrackingDateCreate = DateTime.Now;
+                    //datatrack.TrackingDateCreate = DateTime.Now;
                     datatrack.TrackingResult = request.DataTrack.TrackingResult;
                     datatrack.TrackingStatus = request.DataTrack.TrackingStatus;
 
                     await _context.SaveChangesAsync(cancellationToken);
                 }
+
                 var workOrder = await _context.WorkOrders.FirstOrDefaultAsync(wo => wo.WoNumber == datatrack.TrackingWO, cancellationToken);
 
                 if (workOrder != null)
@@ -190,7 +228,7 @@ namespace Application.DataTracks
                     // Cek apakah TrackingResult diubah dari Fail ke Pass
                     if (TrackingResultOld == "FAIL" && datatrack.TrackingResult == "PASS")
                     {
-                       if (int.Parse(workOrder.FailQTY) < 1)
+                        if (int.Parse(workOrder.FailQTY) < 1)
                         {
                             workOrder.FailQTY = "0";
                         }
@@ -198,7 +236,7 @@ namespace Application.DataTracks
                         {
                             workOrder.FailQTY = (int.Parse(workOrder.FailQTY) - 1).ToString();
                         }
-                        
+
                         workOrder.PassQTY = (int.Parse(workOrder.PassQTY) + 1).ToString();
                     }
                     // Cek apakah TrackingResult diubah dari Pass ke Fail
@@ -218,8 +256,12 @@ namespace Application.DataTracks
                     // Simpan perubahan pada WorkOrder
                     await _context.SaveChangesAsync(cancellationToken);
                 }
+
                 return Unit.Value;
             }
+
+
+
 
         }
     }

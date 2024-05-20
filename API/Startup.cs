@@ -15,7 +15,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Persistence;
-
+using Microsoft.AspNetCore.SignalR; // Tambahkan ini
+using API.Hubs; // Tambahkan ini
 namespace API
 {
     public class Startup
@@ -57,17 +58,26 @@ namespace API
 
             services.AddControllersWithViews();
 
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("CorsPolicy", builder =>
+            //    {
+            //        builder.AllowAnyOrigin()
+            //               .AllowAnyMethod()
+            //               .AllowAnyHeader()
+            //               .WithOrigins("http://localhost:3000", "http://localhost:5173");
+            //    });
+            //});
             services.AddCors(options =>
             {
-                options.AddPolicy("CorsPolicy", builder =>
-                {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader()
-                           .WithOrigins("http://localhost:3000", "http://localhost:5173");
-                });
+                options.AddPolicy("CorsPolicy",
+                    builder => builder
+                        .WithOrigins("http://localhost:3000", "http://localhost:5173")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
             });
-
+            
             // Services.AddIdentityServices(_Config)
         }
 
@@ -107,6 +117,9 @@ namespace API
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<DataUpdateHub>("/dataUpdateHub");
+
+              
             });
         }
     }

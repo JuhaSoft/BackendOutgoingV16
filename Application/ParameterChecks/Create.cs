@@ -80,6 +80,10 @@ namespace Application.ParameterChecks
                 }
                 try
                 {
+                    if (parameterCheck.ImageSampleUrl != null)
+                    {
+
+                   
                     // Decode base64 string menjadi byte array
                     byte[] imageBytes = Convert.FromBase64String(parameterCheck.ImageSampleUrl.Split(',')[1]);
                     int imageSizeInBytes = imageBytes.Length;
@@ -112,6 +116,11 @@ namespace Application.ParameterChecks
 
 
                     parameterCheck.ImageSampleUrl = $"/{uploadsPath}/{fileName}";
+                    }
+                    else
+                    {
+                        parameterCheck.ImageSampleUrl = "";
+                    }
                 }
                 catch (Exception ex)
                 {

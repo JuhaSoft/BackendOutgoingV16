@@ -33,49 +33,53 @@ namespace Application.DataReferences
             }
             public async Task<DataReferenceDTO> Handle(Query request, CancellationToken cancellationToken)
             {
-                
                 if (!await IsUnique(request.Id))
                 {
-                    
                     throw new Exception("Id  :'" + request.Id + "' Tidak ditemukan.");
                 }
-                //return await _context.DataReferences
-                //     .Include(dt => dt.LastStationID)
-                //     .ThenInclude(dt => dt.DataLine)
-                //     .Include(dt => dt.DataReferenceParameterChecks)
-                //     .ThenInclude(drpc => drpc.ParameterCheck)
-                //     .ThenInclude(prc => prc.ParameterCheckErrorMessages)
-                //    .FirstOrDefaultAsync(u => u.Id == request.Id);
-                //return await _context.DataReferences
-                //     .Include(dt => dt.LastStationID)
-                //     .ThenInclude(dt => dt.DataLine)
-                //     .Include(dt => dt.DataReferenceParameterChecks)
-                //     .ThenInclude(drpc => drpc.ParameterCheck)
-                //     .ThenInclude(pc => pc.ParameterCheckErrorMessages)
-                //    .ThenInclude(pcem => pcem.ErrorMessage)
-                //.Include(pc => pc.DataReferenceParameterChecks)
-                //    .FirstOrDefaultAsync(u => u.Id == request.Id);
 
                 var dataReference = await _context.DataReferences
-       .Include(dt => dt.LastStationID)
-       .ThenInclude(dt => dt.DataLine)
-       .Include(dt => dt.DataReferenceParameterChecks)
-       .ThenInclude(drpc => drpc.ParameterCheck)
-       .ThenInclude(pc => pc.ParameterCheckErrorMessages)
-       .ThenInclude(pcem => pcem.ErrorMessage)
-       .FirstOrDefaultAsync(u => u.Id == request.Id);
+                       .Include(dt => dt.LastStationID)
+                       .ThenInclude(dt => dt.DataLine)
+                       .Include(dt => dt.DataReferenceParameterChecks)
+                       .ThenInclude(drpc => drpc.ParameterCheck)
+                       .ThenInclude(pc => pc.ParameterCheckErrorMessages)
+                       .ThenInclude(pcem => pcem.ErrorMessage)
+                       .FirstOrDefaultAsync(u => u.Id == request.Id);
+
                 if (dataReference == null)
                 {
                     throw new Exception("Id :'" + request.Id + "' Tidak ditemukan.");
                 }
 
+                // Step 1: Get list of ParameterCheckIds
+                var parameterCheckIds = dataReference.DataReferenceParameterChecks
+                    .Select(drpc => drpc.ParameterCheckId)
+                    .ToList();
+
+                // Step 2: Get top errors in the last 6 months
+                var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+                var topErrors = await _context.ErrorTrack
+                    .Where(et => parameterCheckIds.Contains(et.PCID) && et.TrackingDateCreate >= sixMonthsAgo)
+                    .GroupBy(et => new { et.ErrorMessage.ErrorCode, et.ErrorMessage.ErrorDescription })
+                    .Select(group => new ErrorMessageDatatrackDTO
+                    {
+                        ErrorCode = group.Key.ErrorCode,
+                        ErrorDescription = group.Key.ErrorDescription,
+                        Count = group.Count()
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .Take(5)
+                    .ToListAsync();
+
+                // Step 3: Map dataReference to DataReferenceDTO and add topErrors
                 var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<MappingProfiles>()));
                 var dataReferenceDetailDTO = mapper.Map<DataReferenceDTO>(dataReference);
+                dataReferenceDetailDTO.TopErrors = topErrors;
 
                 return dataReferenceDetailDTO;
             }
 
-            
-        } 
+        }
     }
 }

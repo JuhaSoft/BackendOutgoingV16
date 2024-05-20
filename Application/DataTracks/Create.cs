@@ -9,7 +9,10 @@ using MediatR;
 using Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-
+using System.Net.Mail;
+using System.Net;
+using Application.Hubs;
+using Microsoft.AspNetCore.SignalR;
 namespace Application.DataTracks
 {
     public class Create
@@ -23,15 +26,30 @@ namespace Application.DataTracks
         {
             private readonly DataContext _context;
             private readonly IWebHostEnvironment _hostingEnvironment;
+             private readonly IHubContext<DataUpdateHub> _hubContext; // Ubah tipe IHubContext
 
-            public Handler(DataContext context, IWebHostEnvironment hostingEnvironment)
+            public Handler(DataContext context, IWebHostEnvironment hostingEnvironment, IHubContext<DataUpdateHub> hubContext)
             {
                 _context = context;
                 _hostingEnvironment = hostingEnvironment;
+                _hubContext = hubContext;
             }
+            private async Task<List<string>> GetEmailsAsync()
+            {
+                var staffEmails = await _context.Users
+                    .Where(u => u.Role == "Admin")
+                    //.Where(u => u.Role == "staff")
+                    .Select(u => u.Email)
+                    .ToListAsync();
 
+                return staffEmails;
+            }
             public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
             {
+                
+                
+                
+                
                 var dataTrack = new DataTrack
                 {
                     Id = Guid.NewGuid(),
@@ -134,10 +152,49 @@ namespace Application.DataTracks
                     {
                         _context.DataTracks.Add(dataTrack);
                         await _context.SaveChangesAsync();
+                        Console.WriteLine("Sending DataUpdated broadcast...");
+                        await _hubContext.Clients.All.SendAsync("DataUpdated", "DataTrack");
+                        Console.WriteLine("DataUpdated broadcast sent successfully.");
+
+                        //await _hubContext.Clients.All.SendAsync("DataUpdated", "DataTrack");
+                        //email
+                        List<string> staffEmails = await GetEmailsAsync();
+
+                        // Konfigurasikan pengaturan SMTP
+                        var smtpClient = new SmtpClient("smtp.gmail.com")
+                        {
+                            Port = 587,
+                            Credentials = new NetworkCredential("gugai.way@gmail.com", "pktb dsso aeeb wewf"),
+                            EnableSsl = true
+                        };
+
+
+
+
                         foreach (var dtce in request.Request.DataTrackCheckings)
                         {
                             if(dtce.DTCValue != "Pass")
                             {
+
+                                foreach (var email in staffEmails)
+                                {
+                                    var mailMessage = new MailMessage
+                                    {
+                                        From = new MailAddress("gugai.way@gmail.com"),
+                                        Subject = "Kesalahan Ditemukan dalam Pemeriksaan Data",
+                                        Body = $"Kesalahan ditemukan dalam pemeriksaan data untuk PSN: {dataTrack.TrackPSN}. Silakan periksa detail di sistem."
+                                    };
+                                    mailMessage.To.Add(new MailAddress(email));
+
+                                    try
+                                    {
+                                        await smtpClient.SendMailAsync(mailMessage);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"Gagal mengirim email ke {email}: {ex.Message}");
+                                    }
+                                }
                                 ErrorTrack errorTrack = new ErrorTrack
                                 {
                                     Id = Guid.NewGuid(),
@@ -164,6 +221,10 @@ namespace Application.DataTracks
                         Console.WriteLine(ex.InnerException.Message);
                     }
                 }
+                Console.WriteLine("Sending DataUpdated broadcast...");
+                await _hubContext.Clients.All.SendAsync("DataUpdated", "DataTrack");
+                Console.WriteLine("DataUpdated broadcast sent successfully.");
+
                 var workOrder = await _context.WorkOrders.FirstOrDefaultAsync(wo => wo.WoNumber == dataTrack.TrackingWO, cancellationToken);
 
                 if (workOrder != null)

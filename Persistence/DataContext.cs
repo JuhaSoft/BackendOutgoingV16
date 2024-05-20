@@ -30,6 +30,7 @@ namespace Persistence
         public DbSet<DataReference> DataReferences { get; set; }
         public DbSet<DataReferenceParameterCheck> DataReferenceParameterChecks { get; set; }
         public DbSet<ErrorTrack> ErrorTrack { get; set; }
+        public DbSet<AppUser> UserData { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
