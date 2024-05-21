@@ -11,8 +11,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mail;
 using System.Net;
-using Application.Hubs;
+using Common.Hubs;
 using Microsoft.AspNetCore.SignalR;
+
 namespace Application.DataTracks
 {
     public class Create
@@ -26,9 +27,8 @@ namespace Application.DataTracks
         {
             private readonly DataContext _context;
             private readonly IWebHostEnvironment _hostingEnvironment;
-             private readonly IHubContext<DataUpdateHub> _hubContext; // Ubah tipe IHubContext
-
-            public Handler(DataContext context, IWebHostEnvironment hostingEnvironment, IHubContext<DataUpdateHub> hubContext)
+            private readonly IHubContext<NotificationHub> _hubContext;
+            public Handler(DataContext context, IWebHostEnvironment hostingEnvironment, IHubContext<NotificationHub> hubContext)
             {
                 _context = context;
                 _hostingEnvironment = hostingEnvironment;
@@ -153,10 +153,7 @@ namespace Application.DataTracks
                         _context.DataTracks.Add(dataTrack);
                         await _context.SaveChangesAsync();
                         Console.WriteLine("Sending DataUpdated broadcast...");
-                        await _hubContext.Clients.All.SendAsync("DataUpdated", "DataTrack");
-                        Console.WriteLine("DataUpdated broadcast sent successfully.");
-
-                        //await _hubContext.Clients.All.SendAsync("DataUpdated", "DataTrack");
+                        
                         //email
                         List<string> staffEmails = await GetEmailsAsync();
 
@@ -221,10 +218,7 @@ namespace Application.DataTracks
                         Console.WriteLine(ex.InnerException.Message);
                     }
                 }
-                Console.WriteLine("Sending DataUpdated broadcast...");
-                await _hubContext.Clients.All.SendAsync("DataUpdated", "DataTrack");
-                Console.WriteLine("DataUpdated broadcast sent successfully.");
-
+                await _hubContext.Clients.All.SendAsync("ReceiveUpdateDataNotification", "Data has been updated.");
                 var workOrder = await _context.WorkOrders.FirstOrDefaultAsync(wo => wo.WoNumber == dataTrack.TrackingWO, cancellationToken);
 
                 if (workOrder != null)

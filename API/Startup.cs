@@ -4,6 +4,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using API.Extensions;
 using Application.WorkOrders;
+using Common.Hubs;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -15,8 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Persistence;
-using Microsoft.AspNetCore.SignalR; // Tambahkan ini
-using API.Hubs; // Tambahkan ini
+
 namespace API
 {
     public class Startup
@@ -117,9 +117,8 @@ namespace API
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<DataUpdateHub>("/dataUpdateHub");
+                endpoints.MapHub<NotificationHub>("/notificationHub");
 
-              
             });
         }
     }
