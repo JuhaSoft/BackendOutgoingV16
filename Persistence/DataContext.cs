@@ -12,6 +12,7 @@ namespace Persistence
         {
         }
 
+        public DbSet<WebConfigData> WebConfigDatas { get; set; }
         public DbSet<SelectOption> SelectOptions { get; set; }
         public DbSet<TraceProduct> TraceProducts { get; set; }
 

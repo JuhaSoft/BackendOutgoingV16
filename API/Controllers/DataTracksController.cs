@@ -34,7 +34,9 @@ namespace API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 999999,
             [FromQuery] string SearchQuery = "",
-            [FromQuery] string Category = "All"
+            [FromQuery] string Category = "All",
+            [FromQuery] string Start = "",
+            [FromQuery] string EndDate = ""
             )
         {
             var query = new List.DtQuery
@@ -42,12 +44,31 @@ namespace API.Controllers
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 SearchQuery = SearchQuery,
-                Category = Category
+                Category = Category,
+                Start = Start,
+                EndDate = EndDate
             };
             var result = await _mediator.Send(query);
             return Ok(result);
         }
-        
+
+        [AllowAnonymous]
+        [HttpGet("excel")]
+        public async Task<ActionResult<List<DataTrackGrapDTO>>> GetDataTracksExel(
+
+            [FromQuery] string Start = "",
+            [FromQuery] string EndDate = ""
+            )
+        {
+            var query = new ListChart.DtQuery
+            {
+
+                Start = Start,
+                EndDate = EndDate
+            };
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
         [AllowAnonymous]
         [HttpGet("Chart")]
         public async Task<ActionResult<List<DataTrackGrapDTO>>> GetDataTracksGraf(

@@ -25,7 +25,22 @@ namespace Persistence
                 }
 
             }
+            if (context.WebConfigDatas.Any()) return;
 
+            var webData = new WebConfigData
+            {
+                Id = Guid.NewGuid(),
+                WebTitle = "TQW",
+                WebDescription = "TQW",
+                EmailRegisterTitle="Application Registed",
+                EmailRegisterBody=" Hi, {0} Kamu sudah terdaftar di aplikasi sebagai {2}. Password mu {1}, silahkan login, update profile dan ganti password.",
+                EmailInfoTitle="Kesalahan Ditemukan dalam Pemeriksaan Data",
+                EmailInfoBody="Kesalahan ditemukan dalam pemeriksaan data untuk PSN: {dataTrack.TrackPSN}. Silakan periksa detail di sistem.",
+            };
+
+            // Menambahkan DataLine ke konteks
+            context.WebConfigDatas.Add(webData);
+            context.SaveChanges();
 
         }
     }

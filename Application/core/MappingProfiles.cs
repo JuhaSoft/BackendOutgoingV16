@@ -20,12 +20,14 @@ namespace Application.core
 
             CreateMap<DataTrack, DataTrackDTO>()
                 .ForMember(dest => dest.LastStationID, opt => opt.MapFrom(src => src.LastStationID))
+                .ForMember(dest => dest.DataTrackCheckings, opt => opt.MapFrom(src => src.DataTrackCheckings))
                 .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserDataDto
                 {
                     DisplayName = src.User.DisplayName,
                     UserName = src.User.UserName,
                     // tambahkan properti lainnya sesuai kebutuhan
                 }));
+
             //.ForMember(dest => dest.DataTrackCheckings, opt => opt.MapFrom(src => src.DataTrackCheckings));
 
             CreateMap<DataTrack, DetailDataTrackDto>()
