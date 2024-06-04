@@ -14,7 +14,7 @@ namespace Application.WebConfigDatas
     {
         public class Query : IRequest<WebConfigData>
         {
-            public Guid Id { get; set; }
+            //public Guid Id { get; set; }
         }
         public class Handler : IRequestHandler<Query, WebConfigData>
         {
@@ -31,13 +31,13 @@ namespace Application.WebConfigDatas
             public async Task<WebConfigData> Handle(Query request, CancellationToken cancellationToken)
             {
 
-                if (!await IsUnique(request.Id))
-                {
+                //if (!await IsUnique(request.Id))
+                //{
 
-                    throw new Exception("Id  :'" + request.Id + "' Tidak ditemukan.");
-                }
+                //    throw new Exception("Id  :'" + request.Id + "' Tidak ditemukan.");
+                //}
                 return await _context.WebConfigDatas
-                    .FirstOrDefaultAsync(u => u.Id == request.Id);
+                    .FirstOrDefaultAsync();
             }
 
             

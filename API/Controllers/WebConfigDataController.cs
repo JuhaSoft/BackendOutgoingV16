@@ -21,12 +21,12 @@ namespace API.Controllers
             this._httpContextAccessor = httpContextAccessor;
         }
          [AllowAnonymous]
-        [HttpGet("{id}")]
-        public async Task <ActionResult<WebConfigData>>GetWebConfigData(Guid Id)
+        [HttpGet]
+        public async Task <ActionResult<WebConfigData>>GetWebConfigData()
         {
              try
             {
-               var webconfigData =await Mediator.Send(new Application.WebConfigDatas.Detail.Query{Id = Id});
+               var webconfigData =await Mediator.Send(new Application.WebConfigDatas.Detail.Query{});
                if (webconfigData == null)
             {
                 return NotFound();

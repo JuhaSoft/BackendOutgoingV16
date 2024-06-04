@@ -20,6 +20,7 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Png; // Import PngEncoder
 using System.Net.Mail;
 using System.Net;
+using Persistence;
 
 namespace API.Controllers
 {
@@ -32,13 +33,14 @@ namespace API.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly IWebHostEnvironment _hostingEnvironment;
-
-        public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, TokenService tokenService, IWebHostEnvironment hostingEnvironment)
+        private readonly DataContext _context;
+        public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, TokenService tokenService, IWebHostEnvironment hostingEnvironment, DataContext context)
         {
             _tokenService = tokenService;
             _signInManager = signInManager;
             _userManager = userManager;
             _hostingEnvironment = hostingEnvironment;
+            _context = context;
         }
         [AllowAnonymous]
         [HttpPost("login")]
@@ -87,12 +89,15 @@ namespace API.Controllers
                 Role = registerDto.Role,
                 Email=registerDto.Email
             };
-
+           
             var result = await _userManager.CreateAsync(user, registerDto.Password);
 
             if (result.Succeeded)
             {
                 var roleResult = await _userManager.AddToRoleAsync(user, user.Role);
+                var webconfig = await _context.WebConfigDatas.FirstOrDefaultAsync();
+                string subject = webconfig.EmailRegisterTitle;
+                string bodyTemplate = webconfig.EmailRegisterBody;
 
                 if (!roleResult.Succeeded)
                 {
@@ -101,9 +106,12 @@ namespace API.Controllers
                 if (user.Email !=null)
                 {
 
-                
-                // Konfigurasikan pengaturan SMTP
-                var smtpClient = new SmtpClient("smtp.gmail.com")
+                    // Ganti variabel dengan nilai yang sesuai
+                    bodyTemplate = bodyTemplate.Replace("{username}", user.DisplayName)
+                                               .Replace("{userRole}", user.Role)
+                                               .Replace("{userpassword}", registerDto.Password);
+                    // Konfigurasikan pengaturan SMTP
+                    var smtpClient = new SmtpClient("smtp.gmail.com")
                 {
                     Port = 587,
                     Credentials = new NetworkCredential("gugai.way@gmail.com", "pktb dsso aeeb wewf"),
@@ -115,8 +123,9 @@ namespace API.Controllers
                     var mailMessage = new MailMessage
                 {
                     From = new MailAddress("gugai.way@gmail.com"),
-                    Subject = "Application Registed",
-                        Body = string.Format(" Hi, {0} Kamu sudah terdaftar di aplikasi sebagai {2}. Password mu {1}, silahkan login, update profile dan ganti password.", namaUser, password, Role)
+                    Subject = subject,
+                        Body = bodyTemplate,
+                        IsBodyHtml = true // Pastikan body pesan email adalah HTML
                     };
                 mailMessage.To.Add(new MailAddress(user.Email));
 

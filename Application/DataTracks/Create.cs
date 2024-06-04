@@ -173,13 +173,25 @@ namespace Application.DataTracks
                             if(dtce.DTCValue != "Pass")
                             {
 
+                                var webconfig = await _context.WebConfigDatas.FirstOrDefaultAsync();
+                                string subject = webconfig.EmailInfoTitle;
+                                string bodyTemplate = webconfig.EmailInfoBody;
+
+                                bodyTemplate = bodyTemplate.Replace("{dataTrack.TrackPSN}", dataTrack.TrackPSN);
+                              
+
+
+
+
+
                                 foreach (var email in staffEmails)
                                 {
                                     var mailMessage = new MailMessage
                                     {
                                         From = new MailAddress("gugai.way@gmail.com"),
-                                        Subject = "Kesalahan Ditemukan dalam Pemeriksaan Data",
-                                        Body = $"Kesalahan ditemukan dalam pemeriksaan data untuk PSN: {dataTrack.TrackPSN}. Silakan periksa detail di sistem."
+                                        Subject = subject,
+                                        Body = bodyTemplate,
+                                      IsBodyHtml = true // Pastikan body pesan email adalah HTML
                                     };
                                     mailMessage.To.Add(new MailAddress(email));
 
